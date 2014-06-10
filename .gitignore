@@ -52,3 +52,8 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# flo
+.flo
+
+# ignore everything in the data directory
+data/

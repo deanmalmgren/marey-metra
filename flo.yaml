@@ -1,0 +1,6 @@
+---
+creates: data/metra_gtfs.zip
+command: 
+ - mkdir -p $(dirname {{creates}})
+ - curl -L http://www.gtfs-data-exchange.com/agency/metra/latest.zip > {{creates}}
+

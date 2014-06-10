@@ -3,12 +3,12 @@ Tuesday.
 
 I've got a meeting at 9:45 in the loop.
 
-Will I make it on time?
+I wonder, *will I make it on time?*
 
-[cue Blues Brother's theme music]
+{{ cue [Peter Gunn Theme](https://www.youtube.com/watch?v=oysMt8iL9UE&feature=kp) }}
 
-marey-metra
-===========
+back story
+==========
 
 The goal of this project is to make it easy for Metra riders (and
 especially myself, because I seem to always be cutting it close) to
@@ -28,8 +28,24 @@ visualizations from Paris to Lyon in his book
 The idea is that these simple lines can show you how likely you are to
 "make up time" and possibly make your meeting.
 
-developing
-==========
+I was
+[originally hesitant](https://twitter.com/deanmalmgren/status/455709231614681088)
+to download this information in this way and I tried to obtain this
+information by
+[a FOIA request on 2014 April 17](https://docs.google.com/document/d/1oyaIARPyksTUERpBNvef9PU_6XgC3keSUk9LmqrEBBc/edit?usp=sharing). Unfortunately,
+[Metra only maintains arrival / departure records for 30 days](https://drive.google.com/file/d/0ByojUCBHn7gJQlUxTmluWmV5UW8/edit?usp=sharing),
+which isn't going to provide the kinds of statistics and up-to-date
+information I'd like to have. For example, if construction starts or
+stops on a particular line, I'd like those delays to be incorporated
+into my estimated arrival. As a result, I've resorted to the original
+idea of just scraping the Rail Time Tracker system in a relatively
+polite way with the hopes that I can subsequently make this data
+available to others, possibly via the
+[Chicago Data Portal](https://data.cityofchicago.org/) or a
+[Fusion Table](https://support.google.com/fusiontables/answer/2571232).
+
+want to contribute?
+===================
 
 1. Clone this repository
 

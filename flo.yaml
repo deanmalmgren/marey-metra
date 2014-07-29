@@ -1,6 +1,31 @@
+
+
+########################################################### schedule information
+
+# download the latest GTFS data. this should be done every month or so
 ---
 creates: data/metra_gtfs.zip
 command: 
  - mkdir -p $(dirname {{creates}})
  - curl -L http://www.gtfs-data-exchange.com/agency/metra/latest.zip > {{creates}}
+
+# unpack the latest GTFS data
+---
+creates: data/metra_gtfs/
+depends: data/metra_gtfs.zip
+command: unzip {{depends}} -d {{creates}}
+
+# parse the GTFS data to configure a crontab that tracks every rail line
+---
+creates: data/crontab
+depends:
+  - src/extract_crontab.py
+  - data/metra_gtfs/
+command: python {{depends|join(' ')}} > {{creates}}
+
+# ############################################################ on-time information
+# ---
+# creates: data/kk.json
+# depends: src/query_rail_time_tracker.py
+# command: python {{depends}} > {{creates}}
 

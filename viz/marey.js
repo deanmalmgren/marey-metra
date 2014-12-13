@@ -1,8 +1,9 @@
 (function (){
 
     // this is the time format for the spreadsheet
-    var foia_time_format = d3.time.format('%m/%d/%y %H:%M')
-
+    var foia_time_format = d3.time.format('%m/%d/%y %H:%M');
+    var schedule_time_format = d3.time.format(' %H:%M:%S');
+    var data;
     d3.csv("data/morning_train.csv", function (d) {
         var t = foia_time_format.parse(d['Arrival Date/Time']);
         return {
@@ -15,8 +16,16 @@
             dwell: +d['Dwell (sec)'],
             minutes_late: +d['Minutes Late']
         }
-    }, function (data) {
-        marey_diagram(data);
+    }, function (_data) {
+        data = _data;
+        d3.csv("data/morning_schedule.csv", function (d) {
+            return {
+                t: time_of_day(schedule_time_format.parse(d[' arrival_time'])),
+                station: d[' stop_id']
+            }
+        }, function (schedule) {
+            marey_diagram(data, schedule);
+        })
     })
 
 }());
@@ -25,7 +34,9 @@ function time_of_day(t) {
     return new Date(1970, 0, 1, t.getHours(), t.getMinutes());
 }
 
-function marey_diagram(data) {
+function marey_diagram(data, schedule) {
+
+    console.log(schedule);
 
     // aggregate the rows by date
     var nest = d3.nest()
@@ -98,4 +109,10 @@ function marey_diagram(data) {
         .append("path")
         .attr("class", "line")
         .attr("d", function (d) {return line(d.values)});
+
+    svg.append("path")
+        .attr("class", "line schedule")
+        .datum(schedule)
+        .attr("d", line);
+
 }

@@ -47,9 +47,12 @@ depends: data/foia_arrival_departure.csv
 command:
   - head -n 1 {{depends}} > {{creates}}
   - grep 'UP West,38,' {{depends}} >> {{creates}}
+
+# find the scheduled time for train 38
 ---
-creates: data/afternoon_train.csv
-depends: data/foia_arrival_departure.csv
+creates: data/morning_schedule.csv
+depends: data/metra_gtfs
+stop_times: data/metra_gtfs/stop_times.txt
 command:
-  - head -n 1 {{depends}} > {{creates}}
-  - grep 'UP West,41,' {{depends}} >> {{creates}}
+  - head -n 1 {{stop_times}} > {{creates}}
+  - grep 'UP-W_UW38_V1,' {{stop_times}} >> {{creates}}

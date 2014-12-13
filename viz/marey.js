@@ -4,24 +4,19 @@
     var foia_time_format = d3.time.format('%m/%d/%y %H:%M')
 
     d3.csv("data/morning_train.csv", function (d) {
+        var t = foia_time_format.parse(d['Arrival Date/Time']);
         return {
             corridor: d['Corridor'],
             train_number: +d['Train Number'],
             station: d['Station'],
-            arrival: foia_time_format.parse(d['Arrival Date/Time']),
+            arrival: t,
+            t: time_of_day(t),
             departure: foia_time_format.parse(d['Departure Date/Time']),
             dwell: +d['Dwell (sec)'],
             minutes_late: +d['Minutes Late']
         }
     }, function (data) {
-
-        // aggregate the rows by date
-        var nest = d3.nest()
-            .key(function (d) {return Math.floor(d.arrival.getTime() / 1000 / 86400)})
-            .sortKeys(d3.ascending)
-            .entries(data);
-
-        marey_diagram(nest);
+        marey_diagram(data);
     })
 
 }());
@@ -30,16 +25,24 @@ function time_of_day(t) {
     return new Date(1970, 0, 1, t.getHours(), t.getMinutes());
 }
 
-function marey_diagram(nest) {
-    var margin = {top: 20, right: 20, bottom: 30, left: 100},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+function marey_diagram(data) {
 
+    // aggregate the rows by date
+    var nest = d3.nest()
+        .key(function (d) {return Math.floor(d.arrival.getTime() / 1000 / 86400)})
+        .sortKeys(d3.ascending)
+        .entries(data);
+
+    // TODO: There is  probably a more robust way to do this in the situation
+    // where the first element of the next does not actually have all the values
     var stations = nest[0].values.map(function (d){return d.station});
-
     function stationLabel(i) {
         return stations[i];
     }
+
+    var margin = {top: 20, right: 20, bottom: 30, left: 100},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
 
     var x = d3.time.scale()
         .range([0, width]);
@@ -57,10 +60,8 @@ function marey_diagram(nest) {
         .tickValues(d3.range(stations.length))
         .tickFormat(stationLabel);
 
-    var data = nest[0].values;
-
     var line = d3.svg.line()
-        .x(function(d) { return x(time_of_day(d.arrival)); })
+        .x(function(d) { return x(d.t); })
         .y(function(d, index) { return y(index); });
 
     var svg = d3.select("#marey-diagram").append("svg")
@@ -69,8 +70,8 @@ function marey_diagram(nest) {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    x.domain(d3.extent(data, function(d) { return time_of_day(d.arrival)}));
-    y.domain(d3.extent(data, function(d, index) { return index; }));
+    x.domain(d3.extent(data, function(d) { return d.t }));
+    y.domain([-.5, d3.max(nest.map(function(d){return d.values.length-1}))+.5])
 
     svg.append("g")
         .attr("class", "x axis")

@@ -9,8 +9,13 @@ body {
   shape-rendering: crispEdges;
 }
 
+.y.axis path, .y.axis line {
+    display: none;
+}
+
 .line {
   fill: none;
-  stroke: steelblue;
-  stroke-width: 1.5px;
+  stroke: #3182bd;
+  stroke-width: 2px;
+  stroke-opacity: 0.4;
 }

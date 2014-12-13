@@ -5,14 +5,15 @@
     var schedule_time_format = d3.time.format(' %H:%M:%S');
     var data;
     d3.csv("data/morning_train.csv", function (d) {
-        var t = foia_time_format.parse(d['Arrival Date/Time']);
+        var t0 = foia_time_format.parse(d['Arrival Date/Time']);
+        var t1 = foia_time_format.parse(d['Departure Date/Time']);
         return {
             corridor: d['Corridor'],
             train_number: +d['Train Number'],
             station: d['Station'],
-            arrival: t,
-            t: time_of_day(t),
-            departure: foia_time_format.parse(d['Departure Date/Time']),
+            arrival: t0,
+            t: time_of_day(t1),
+            departure: t1,
             dwell: +d['Dwell (sec)'],
             minutes_late: +d['Minutes Late']
         }
@@ -104,15 +105,15 @@ function marey_diagram(data, schedule) {
         .attr("class", "y axis")
         .call(yAxis);
 
+    svg.append("path")
+        .attr("class", "line schedule")
+        .datum(schedule)
+        .attr("d", line);
+
     svg.selectAll("path.line")
         .data(nest).enter()
         .append("path")
         .attr("class", "line")
         .attr("d", function (d) {return line(d.values)});
-
-    svg.append("path")
-        .attr("class", "line schedule")
-        .datum(schedule)
-        .attr("d", line);
 
 }

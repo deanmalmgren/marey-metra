@@ -13,6 +13,10 @@ body {
     display: none;
 }
 
+.y.bands rect {
+    fill: #eee;
+}
+
 .line {
   fill: none;
   stroke: #3182bd;

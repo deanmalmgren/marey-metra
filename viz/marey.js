@@ -42,7 +42,8 @@ function marey_diagram(data) {
 
     var margin = {top: 20, right: 20, bottom: 30, left: 100},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    height = 500 - margin.top - margin.bottom,
+    band_height = 0.8;
 
     var x = d3.time.scale()
         .range([0, width]);
@@ -62,7 +63,7 @@ function marey_diagram(data) {
 
     var line = d3.svg.line()
         .x(function(d) { return x(d.t); })
-        .y(function(d, index) { return y(index); });
+        .y(function(d, i) { return y(i); });
 
     var svg = d3.select("#marey-diagram").append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -72,6 +73,16 @@ function marey_diagram(data) {
 
     x.domain(d3.extent(data, function(d) { return d.t }));
     y.domain([-.5, d3.max(nest.map(function(d){return d.values.length-1}))+.5])
+
+    svg.append("g")
+        .attr("class", "y bands")
+        .selectAll("rect")
+        .data(stations).enter()
+        .append("rect")
+        .attr("x", 0)
+        .attr("width", width)
+        .attr("y", function(station, i){ return y(i-band_height/2)})
+        .attr("height", y(band_height) - y(0))
 
     svg.append("g")
         .attr("class", "x axis")

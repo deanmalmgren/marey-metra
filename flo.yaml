@@ -46,10 +46,10 @@ creates: data/morning_train.csv
 depends: data/foia_arrival_departure.csv
 command:
   - head -n 1 {{depends}} > {{creates}}
-  - grep 'UP West,38' {{depends}} >> {{creates}}
+  - grep 'UP West,38,' {{depends}} >> {{creates}}
 ---
 creates: data/afternoon_train.csv
 depends: data/foia_arrival_departure.csv
 command:
   - head -n 1 {{depends}} > {{creates}}
-  - grep 'UP West,41' {{depends}} >> {{creates}}
+  - grep 'UP West,41,' {{depends}} >> {{creates}}

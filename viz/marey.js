@@ -26,16 +26,26 @@
 
 }());
 
+function time_of_day(t) {
+    return new Date(1970, 0, 1, t.getHours(), t.getMinutes());
+}
+
 function marey_diagram(nest) {
     var margin = {top: 20, right: 20, bottom: 30, left: 100},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
+    var stations = nest[0].values.map(function (d){return d.station});
+
+    function stationLabel(i) {
+        return stations[i];
+    }
+
     var x = d3.time.scale()
         .range([0, width]);
 
     var y = d3.scale.linear()
-        .range([height, 0]);
+        .range([0, height]);
 
     var xAxis = d3.svg.axis()
         .scale(x)
@@ -43,13 +53,11 @@ function marey_diagram(nest) {
 
     var yAxis = d3.svg.axis()
         .scale(y)
-        .orient("left");
+        .orient("left")
+        .tickValues(d3.range(stations.length))
+        .tickFormat(stationLabel);
 
     var data = nest[0].values;
-
-    function time_of_day(t) {
-        return new Date(1970, 0, 1, t.getHours(), t.getMinutes());
-    }
 
     var line = d3.svg.line()
         .x(function(d) { return x(time_of_day(d.arrival)); })

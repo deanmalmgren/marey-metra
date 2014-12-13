@@ -71,6 +71,6 @@ want to contribute?
 
    ```bash
    mkvirtualenv marey-metra
-   sudo pip install -r REQUIREMENTS
+   pip install -r REQUIREMENTS
    ```
 

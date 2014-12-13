@@ -5,7 +5,7 @@
 # download the latest GTFS data. this should be done every month or so
 ---
 creates: data/metra_gtfs.zip
-command: 
+command:
  - mkdir -p $(dirname {{creates}})
  - curl -L http://www.gtfs-data-exchange.com/agency/metra/latest.zip > {{creates}}
 
@@ -29,3 +29,13 @@ command: python {{depends|join(' ')}} > {{creates}}
 # depends: src/query_rail_time_tracker.py
 # command: python {{depends}} > {{creates}}
 
+
+############################################### proof of concept from foia data
+
+# download foia data from google docs
+# https://aftership.uservoice.com/knowledgebase/articles/331269-csv-auto-fetch-using-google-drive-spreadsheet
+---
+creates: data/foia_arrival_departure.csv
+command:
+  - mkdir -p $(dirname {{creates}})
+  - curl 'https://docs.google.com/spreadsheets/d/1bHTS-BiyC3vi8kTfVthejwh6Do0yJYmd4tKYybeBbVs/export?format=csv' > {{creates}}

@@ -39,3 +39,17 @@ creates: data/foia_arrival_departure.csv
 command:
   - mkdir -p $(dirname {{creates}})
   - curl 'https://docs.google.com/spreadsheets/d/1bHTS-BiyC3vi8kTfVthejwh6Do0yJYmd4tKYybeBbVs/export?format=csv' > {{creates}}
+
+# find all of the routes that are related to *my* usual trains
+---
+creates: data/morning_train.csv
+depends: data/foia_arrival_departure.csv
+command:
+  - head -n 1 {{depends}} > {{creates}}
+  - grep 'UP West,38' {{depends}} >> {{creates}}
+---
+creates: data/afternoon_train.csv
+depends: data/foia_arrival_departure.csv
+command:
+  - head -n 1 {{depends}} > {{creates}}
+  - grep 'UP West,41' {{depends}} >> {{creates}}

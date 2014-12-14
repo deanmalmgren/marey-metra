@@ -4,6 +4,7 @@ body {
 
 .axis path,
 .axis line {
+  display: none;
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;

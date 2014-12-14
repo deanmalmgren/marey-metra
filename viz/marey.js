@@ -54,18 +54,6 @@ function marey_diagram(data, schedule) {
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
-    // calculate the band height
-    var min_dx=Infinity, dx;
-    distances.forEach(function (x, i){
-        if (i!==0) {
-            dx = distances[i] - distances[i-1];
-            if (dx < min_dx) {
-                min_dx = dx;
-            }
-        }
-    })
-    var band_height = 0.8*min_dx;
-
     var x = d3.time.scale()
         .range([0, width])
         .domain(d3.extent(data, function(d) { return d.t }));
@@ -94,6 +82,7 @@ function marey_diagram(data, schedule) {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    var band_height = 4;
     svg.append("g")
         .attr("class", "y bands")
         .selectAll("rect")
@@ -101,9 +90,8 @@ function marey_diagram(data, schedule) {
         .append("rect")
         .attr("x", 0)
         .attr("width", width)
-        .attr("y", function(station, i){ return y(distances[i]-band_height/2)})
-        .attr("height", y(band_height) - y(0))
-        console.log(band_height)
+        .attr("y", function(station, i){ return y(distances[i])-band_height/2})
+        .attr("height", band_height)
 
     svg.append("g")
         .attr("class", "x axis")

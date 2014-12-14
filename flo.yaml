@@ -56,3 +56,18 @@ stop_times: data/metra_gtfs/stop_times.txt
 command:
   - head -n 1 {{stop_times}} > {{creates}}
   - grep 'UP-W_UW38_V1,' {{stop_times}} >> {{creates}}
+
+# find the distance travelled along the route from the google download
+---
+creates: data/distance.dat
+depends: data/metra_gtfs
+shapes: data/metra_gtfs/shapes.txt
+command:
+  - grep 'UP-W_IB_1' {{shapes}} | awk -F', ' 'BEGIN{a[3]=1;a[5]=1;a[7]=1;a[15]=1;a[18]=1;a[21]=1;a[24]=1;a[26]=1;a[27]=1;}{if(!($4 in a)) print $5}' > {{creates}}
+---
+creates: data/distance.js
+depends: data/distance.dat
+command:
+  - echo 'var distances = [\c' > {{creates}}
+  - awk 'BEGIN{sep=","}{if(NR==19) sep=""; printf("%f%s", $1, sep)}' {{depends}} >> {{creates}}
+  - echo '];' >>  {{creates}}

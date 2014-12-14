@@ -37,8 +37,6 @@ function time_of_day(t) {
 
 function marey_diagram(data, schedule) {
 
-    console.log(schedule);
-
     // aggregate the rows by date
     var nest = d3.nest()
         .key(function (d) {return Math.floor(d.arrival.getTime() / 1000 / 86400)})
@@ -48,20 +46,33 @@ function marey_diagram(data, schedule) {
     // TODO: There is  probably a more robust way to do this in the situation
     // where the first element of the next does not actually have all the values
     var stations = nest[0].values.map(function (d){return d.station});
-    function stationLabel(i) {
+    function stationLabel(distance, i) {
         return stations[i];
     }
 
     var margin = {top: 20, right: 20, bottom: 30, left: 100},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
-    band_height = 0.8;
+    height = 500 - margin.top - margin.bottom;
+
+    // calculate the band height
+    var min_dx=Infinity, dx;
+    distances.forEach(function (x, i){
+        if (i!==0) {
+            dx = distances[i] - distances[i-1];
+            if (dx < min_dx) {
+                min_dx = dx;
+            }
+        }
+    })
+    var band_height = 0.8*min_dx;
 
     var x = d3.time.scale()
-        .range([0, width]);
+        .range([0, width])
+        .domain(d3.extent(data, function(d) { return d.t }));
 
     var y = d3.scale.linear()
-        .range([0, height]);
+        .range([0, height])
+        .domain(d3.extent(distances));
 
     var xAxis = d3.svg.axis()
         .scale(x)
@@ -70,21 +81,18 @@ function marey_diagram(data, schedule) {
     var yAxis = d3.svg.axis()
         .scale(y)
         .orient("left")
-        .tickValues(d3.range(stations.length))
+        .tickValues(distances)
         .tickFormat(stationLabel);
 
     var line = d3.svg.line()
         .x(function(d) { return x(d.t); })
-        .y(function(d, i) { return y(i); });
+        .y(function(d, i) { return y(distances[i]); });
 
     var svg = d3.select("#marey-diagram").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    x.domain(d3.extent(data, function(d) { return d.t }));
-    y.domain([-.5, d3.max(nest.map(function(d){return d.values.length-1}))+.5])
 
     svg.append("g")
         .attr("class", "y bands")
@@ -93,8 +101,9 @@ function marey_diagram(data, schedule) {
         .append("rect")
         .attr("x", 0)
         .attr("width", width)
-        .attr("y", function(station, i){ return y(i-band_height/2)})
+        .attr("y", function(station, i){ return y(distances[i]-band_height/2)})
         .attr("height", y(band_height) - y(0))
+        console.log(band_height)
 
     svg.append("g")
         .attr("class", "x axis")

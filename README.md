@@ -33,7 +33,7 @@ I was
 to download this information in this way and I tried to obtain this
 information by
 [a FOIA request on 2014 April 17](https://docs.google.com/document/d/1oyaIARPyksTUERpBNvef9PU_6XgC3keSUk9LmqrEBBc/edit?usp=sharing). Unfortunately,
-[Metra only maintains arrival / departure records for 30 days](https://drive.google.com/file/d/0ByojUCBHn7gJQlUxTmluWmV5UW8/edit?usp=sharing),
+[Metra only maintains arrival / departure records for 30 days](https://drive.google.com/file/d/0ByojUCBHn7gJT1JvTGhKOWNaa1k/view?usp=sharing),
 which isn't going to provide the kinds of statistics and up-to-date
 information I'd like to have. For example, if construction starts or
 stops on a particular line, I'd like those delays to be incorporated
@@ -73,4 +73,3 @@ want to contribute?
    mkvirtualenv marey-metra
    pip install -r REQUIREMENTS
    ```
-

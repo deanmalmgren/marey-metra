@@ -21,53 +21,15 @@ import time
 import requests
 
 from utils import strip, js2pydate
+import gtfs
 
-# trip_id = sys.argv[1]
-# gtfs_dir = sys.argv[1]
+# get the trip id command line argument
+trip_id = sys.argv[1]
 
-# # TODO: this can be moved into the actual scraper. the scraper can
-# # read in the schedule when it first launches based on the trip_id
-#
-# # read in the stop times to find all of the trips. this information
-# # needs to be passed along to the
-# trips = collections.defaultdict(list)
-# with open(os.path.join(gtfs_dir, 'stop_times.txt')) as stream:
-#     reader = csv.DictReader(stream)
-#     for row in map(strip, reader):
-#         trips[row['trip_id']].append((
-#             row['stop_sequence'],
-#             row['stop_id'],
-#             row['departure_time'],
-#         ))
-#
-# # have this script end prematurely
-# print >> sys.stderr, "NOT DONE YET"
-# sys.exit(0)
-# fuck
-
-stations = (
-    "ELBURN",
-    "LAFOX",
-    "GENEVA",
-    "WCHICAGO",
-    "WINFIELD",
-    "WHEATON",
-    "COLLEGEAVE",
-    "GLENELLYN",
-    "LOMBARD",
-    "VILLAPARK",
-    "ELMHURST",
-    "BERKELEY",
-    "BELLWOOD",
-    "MELROSEPK",
-    "MAYWOOD",
-    "RIVRFOREST",
-    "OAKPARK",
-    "KEDZIE",
-    "OTC",
-)
-route = "UP-W"
-train_number = 38
+# use the trip id to get a bunch of other information from gtfs
+route = gtfs.get_route(trip_id)
+train_number = gtfs.get_train_number(trip_id)
+stations = gtfs.get_stations(trip_id)
 
 
 class MockResponse(object):
@@ -95,36 +57,40 @@ def query_rail_time_tracker(route, train_number, origin, destination):
     # extract the estimated departure time for this train
     result = json.loads(response.text)
     data = json.loads(result['d'])
-    estimated_departure_time = None
+    estimated_departure_time, scheduled_departure_time = None, None
     for i in range(1,4):
         train = data['train%d' % i]
         if int(train['train_num']) == train_number:
             estimated_departure_time = js2pydate(train['estimated_dpt_time'])
+            scheduled_departure_time = js2pydate(train['scheduled_dpt_time'])
             break
 
-    return estimated_departure_time
+    return estimated_departure_time, scheduled_departure_time
 
 # for each station, query the rail time tracker API until we have the last
 # possible 'estimated departure time', which corresponds with the actual
 # departure time
 estimated_departure_times = dict.fromkeys(stations, None)
+scheduled_departure_times = dict.fromkeys(stations, None)
 is_done = dict.fromkeys(stations, False)
 while not all(is_done.values()):
 
     # for each station along this route, query the rail time tracker API
     for origin_station in stations:
         if not is_done[origin_station]:
-            t = query_rail_time_tracker(
+            t_estimated, t_scheduled = query_rail_time_tracker(
                 route, train_number, origin_station, stations[-1],
             )
-            if isinstance(t, datetime.datetime):
-                estimated_departure_times[origin_station] = t
+            if isinstance(t_estimated, datetime.datetime):
+                estimated_departure_times[origin_station] = t_estimated
+                scheduled_departure_times[origin_station] = t_scheduled
             else:
                 is_done[origin_station] = True
 
     # pause for a bit before making another round of requests
     for station in stations:
-        print station, is_done[station], estimated_departure_times[station]
+        print station, is_done[station], estimated_departure_times[station],\
+            scheduled_departure_times[station]
     print ''
     time.sleep(30)
 

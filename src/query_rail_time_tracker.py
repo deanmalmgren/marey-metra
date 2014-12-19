@@ -15,6 +15,8 @@ This script is intended to be run by cron.
 import sys
 import argparse
 import json
+import datetime
+import time
 
 import requests
 
@@ -64,24 +66,66 @@ stations = (
     "KEDZIE",
     "OTC",
 )
+route = "UP-W"
+train_number = 38
 
-# post a request to the API
-post_data = {"stationRequest": {
-    "Corridor": "UP-W",
-    "Destination": "OTC",
-    "Origin": stations[2],
-}}
-headers = {'content-type': 'application/json'}
-response = requests.post(
-    "http://12.205.200.243/AJAXTrainTracker.svc/GetAcquityTrainData",
-    # "http://75.144.111.115/AJAXTrainTracker.svc/GetAcquityTrainData", #backup?
-    data=json.dumps(post_data),
-    headers=headers,
-)
 
-# extract the estimated departure time for this post.
-if response.status_code == 200:
+class MockResponse(object):
+    status_code = None
+
+def query_rail_time_tracker(route, train_number, origin, destination):
+
+    # prepare the post data to the API
+    post_data = {"stationRequest": {
+        "Corridor": route,
+        "Origin": origin,
+        "Destination": destination,
+    }}
+
+    # make requests until we get an 'OK' response
+    response = MockResponse()
+    while response.status_code != 200:
+        response = requests.post(
+            "http://12.205.200.243/AJAXTrainTracker.svc/GetAcquityTrainData",
+            # "http://75.144.111.115/AJAXTrainTracker.svc/GetAcquityTrainData", #backup?
+            data=json.dumps(post_data),
+            headers={'content-type': 'application/json'},
+        )
+
+    # extract the estimated departure time for this train
     result = json.loads(response.text)
     data = json.loads(result['d'])
-    train1 = data['train1']
-    print train1['train_num'], js2pydate(train1['estimated_dpt_time']), js2pydate(train1['scheduled_dpt_time']),
+    estimated_departure_time = None
+    for i in range(1,4):
+        train = data['train%d' % i]
+        if int(train['train_num']) == train_number:
+            estimated_departure_time = js2pydate(train['estimated_dpt_time'])
+            break
+
+    return estimated_departure_time
+
+# for each station, query the rail time tracker API until we have the last
+# possible 'estimated departure time', which corresponds with the actual
+# departure time
+estimated_departure_times = dict.fromkeys(stations, None)
+is_done = dict.fromkeys(stations, False)
+while not all(is_done.values()):
+
+    # for each station along this route, query the rail time tracker API
+    for origin_station in stations:
+        if not is_done[origin_station]:
+            t = query_rail_time_tracker(
+                route, train_number, origin_station, stations[-1],
+            )
+            if isinstance(t, datetime.datetime):
+                estimated_departure_times[origin_station] = t
+            else:
+                is_done[origin_station] = True
+
+    # pause for a bit before making another round of requests
+    for station in stations:
+        print station, is_done[station], estimated_departure_times[station]
+    print ''
+    time.sleep(30)
+
+# TODO save everything to a database or something

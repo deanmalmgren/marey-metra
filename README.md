@@ -93,3 +93,12 @@ notes on the development stack
 * Django project setup is based off of @xenith's [django base
   template](https://github.com/xenith/django-base-template), which incorporates
   a lot of good default behaviors out of the box.
+
+related work
+============
+
+In the process of putting this project together, I stumbled across [a
+visualization of the Boston transit system](http://mbtaviz.github.io/). This
+analysis is intended to show the relationship between passenger flows and train
+delays but has some similar elements. This does not necessarily make it obvious
+for end users how late (or early) they will be to meetings.

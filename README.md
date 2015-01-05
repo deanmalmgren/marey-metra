@@ -74,8 +74,8 @@ want to contribute?
    pip install -r requirements/python-host
    ```
 
-4. Install `Vagrant <http://vagrantup.com/downloads>`_ and
-   `Virtualbox <https://www.virtualbox.org/wiki/Downloads>`_ and launch
+4. Install [Vagrant](http://vagrantup.com/downloads) and
+   [Virtualbox](https://www.virtualbox.org/wiki/Downloads) and launch
    the development virtual machine:
 
    ```bash

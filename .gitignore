@@ -57,3 +57,6 @@ docs/_build/
 
 # ignore everything in the data directory
 data/
+
+# ignore things that are built during provisioning
+/server_config.ini

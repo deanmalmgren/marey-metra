@@ -1,2 +1,56 @@
 requests
 flo
+
+# Choose your databases adapter
+#psycopg2
+MySQL-python
+
+# for bcrypt passwords
+bcrypt
+
+# Django stuff
+Django>=1.7
+
+# Templates
+django_compressor
+
+# Security
+bleach
+#cef
+
+# Logging
+#raven
+
+# Celery: Message queue
+celery
+django-celery
+
+# L10n/i18n
+#Babel
+#-e git://github.com/clouserw/tower.git#egg=tower
+
+# Caching
+python-memcached
+
+# Admin
+django-debug-toolbar
+
+# Migrations
+South
+
+# Feature testing
+#django-waffle
+
+# Deployment
+Fabric
+
+# Documentation
+Sphinx
+
+# Testing
+nose
+mock
+django-nose
+coverage
+pep8
+pylint

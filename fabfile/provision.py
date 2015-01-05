@@ -12,7 +12,6 @@ import fabric
 from fabric.context_managers import quiet
 from fabric.api import env, task, local, run, settings, cd, sudo, lcd
 import fabtools
-from fabtools.vagrant import vagrant_settings
 
 # local
 import decorators
@@ -46,13 +45,11 @@ def python_packages():
 @decorators.needs_environment
 def debian_packages():
     """install debian packages"""
-    
-    # get the list of packages
     filename = os.path.join(utils.requirements_root(), "debian")
     with open(filename, 'r') as stream:
-        packages = stream.read().strip().splitlines()
-
-    # install them all with fabtools.
+        packages = []
+        for line in stream:
+            packages.append(line.split('#', 1)[0].strip())
         fabtools.require.deb.packages(packages)
 
 
@@ -84,12 +81,12 @@ def setup_shell_environment():
 @decorators.needs_environment
 def setup_analysis():
     """prepare analysis environment"""
-        
+
     # write a analysis.ini file that has the provider so we can
     # easily distinguish between development and production
     # environments when we run our analysis
     template = os.path.join(
-        utils.fabfile_templates_root(), 
+        utils.fabfile_templates_root(),
         "server_config.ini",
     )
     fabtools.require.files.template_file(
@@ -98,10 +95,36 @@ def setup_analysis():
         context=env,
     )
 
-    # create a data directory where all of the analysis and raw
-    # data is stored. 
-    data_dir = "/vagrant/data"
-    fabtools.require.files.directory(data_dir)
+
+@task
+@decorators.needs_environment
+def setup_database():
+    """Require MySQL database exists with correct credentials."""
+    fabtools.require.mysql.server(password=env.mysql_root_password)
+    with settings(mysql_user='root', mysql_password=env.mysql_root_password):
+        fabtools.require.mysql.user(env.django_user, env.django_password)
+        fabtools.require.mysql.database(env.django_db, owner=env.django_user)
+
+
+@task
+@decorators.needs_environment
+def setup_django():
+    """render settings and collectstatic
+    """
+    fabtools.files.upload_template(
+        "django_local_settings.py",
+        "%s/web/web/settings/local.py" % env.remote_path,
+        context=env,
+        use_jinja=True,
+        template_dir=utils.fabfile_templates_root(),
+    )
+
+    # # only collectstatic on non-dev environments- in dev, the dev
+    # # server handles staticfiles and having things in $root/static
+    # # confuses compressor
+    # if env.config_type != 'dev':
+    #     with cd(env.remote_path):
+    #         run("./manage.py collectstatic --noinput")
 
 
 def set_timezone(timezone='America/Chicago', restart_services=()):
@@ -129,7 +152,7 @@ def require_timezone(timezone='America/Chicago', restart_services=()):
     # don't do anything if time zone is already set correctly
     if result.return_code == 0:
         return None
-    
+
     # set timezone if needed
     elif result.return_code == 1:
         set_timezone(timezone, restart_services=restart_services)
@@ -163,3 +186,5 @@ def default(do_rsync=True):
     # to get it into the same state for everyone
     setup_shell_environment()
     setup_analysis()
+    setup_database()
+    setup_django()

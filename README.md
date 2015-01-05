@@ -71,5 +71,25 @@ want to contribute?
 
    ```bash
    mkvirtualenv marey-metra
-   pip install -r REQUIREMENTS
+   pip install -r requirements/python-host
    ```
+
+4. Install `Vagrant <http://vagrantup.com/downloads>`_ and
+   `Virtualbox <https://www.virtualbox.org/wiki/Downloads>`_ and launch
+   the development virtual machine:
+
+   ```bash
+   vagrant plugin install iniparse
+   vagrant up && fab dev provision
+   ```
+
+notes on the development stack
+==============================
+
+* Provisioning is based off of @gabegaster's [fabtools
+  startkit](https://github.com/gabegaster/FabTools_StartKit) using
+  [fabtools](https://github.com/ronnix/fabtools).
+
+* Django project setup is based off of @xenith's [django base
+  template](https://github.com/xenith/django-base-template), which incorporates
+  a lot of good default behaviors out of the box.

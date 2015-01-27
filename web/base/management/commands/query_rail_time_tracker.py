@@ -21,7 +21,6 @@ from optparse import make_option
 from django.core.management.base import BaseCommand, CommandError
 import requests
 
-from base.utils import strip, js2pydate
 import base.gtfs as gtfs
 
 
@@ -125,4 +124,6 @@ class Command(BaseCommand):
         return estimated_departure_time, scheduled_departure_time
 
     def cast_as_time(self, time_as_string):
-        return datetime.datetime.strptime(time_as_string, "%H:%M")
+        t = datetime.datetime.strptime(time_as_string, "%H:%M")
+        today = datetime.date.today()
+        return t.replace(today.year, today.month, today.day)

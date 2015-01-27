@@ -61,9 +61,9 @@ class Command(BaseCommand):
         stations = gtfs.get_stations(trip_id)
 
         # for each station, query the rail time tracker API until we have the last
-        # possible 'estimated departure time', which corresponds with the actual
+        # possible 'tracked departure time', which corresponds with the actual
         # departure time
-        estimated_departure_times = dict.fromkeys(stations, None)
+        tracked_departure_times = dict.fromkeys(stations, None)
         scheduled_departure_times = dict.fromkeys(stations, None)
         is_done = dict.fromkeys(stations, False)
         while not all(is_done.values()):
@@ -71,18 +71,21 @@ class Command(BaseCommand):
             # for each station along this route, query the rail time tracker API
             for origin_station in stations[:-1]:
                 if not is_done[origin_station]:
-                    t_estimated, t_scheduled = self.query_rail_time_tracker(
+                    a, b, c, d = self.query_rail_time_tracker(
                         route, train_number, origin_station, stations[-1],
                     )
-                    if isinstance(t_estimated, datetime.datetime):
-                        estimated_departure_times[origin_station] = t_estimated
-                        scheduled_departure_times[origin_station] = t_scheduled
+                    if isinstance(a, datetime.datetime):
+                        tracked_departure_times[origin_station] = a
+                        scheduled_departure_times[origin_station] = b
+                        tracked_departure_times[stations[-1]] = c
+                        scheduled_departure_times[stations[-1]] = d
                     else:
                         is_done[origin_station] = True
+                        is_done[stations[-1]] = True
 
             # pause for a bit before making another round of requests
             for station in stations:
-                print station, is_done[station], estimated_departure_times[station],\
+                print station, is_done[station], tracked_departure_times[station],\
                     scheduled_departure_times[station]
             print ''
             time.sleep(sleep_time)
@@ -105,23 +108,33 @@ class Command(BaseCommand):
                 params=request_data,
                 headers=self.headers
             )
-
-        # extract the estimated departure time for this train
         result = json.loads(response.text)
-        estimated_departure_time, scheduled_departure_time = None, None
-        for i in range(1,4):
+
+        # extract the tracked departure time for this train
+        tracked_departure_time, scheduled_departure_time = None, None
+        tracked_arrival_time, scheduled_arrival_time = None, None
+        for i in range(1,3):
+            print result.keys()
             train = result['train%d' % i]
             if int(train['train_num']) == train_number:
                 if train['hasData']:
-                    estimated_departure_time = train['estimated_dpt_time']
+                    tracked_departure_time = train['estimated_dpt_time']
                     scheduled_departure_time = train['scheduled_dpt_time']
+                    tracked_arrival_time = train['estimated_arv_time']
+                    scheduled_arrival_time = train['scheduled_arv_time']
                 else:
-                    estimated_departure_time = scheduled_departure_time = train['scheduled_dpt_time']
-                estimated_departure_time = self.cast_as_time(estimated_departure_time)
+                    tracked_departure_time = scheduled_departure_time = train['scheduled_dpt_time']
+                    tracked_arrival_time = scheduled_arrival_time = train['scheduled_arv_time']
+                tracked_departure_time = self.cast_as_time(tracked_departure_time)
                 scheduled_departure_time = self.cast_as_time(scheduled_departure_time)
+                tracked_arrival_time = self.cast_as_time(tracked_arrival_time)
+                scheduled_arrival_time = self.cast_as_time(scheduled_arrival_time)
                 break
 
-        return estimated_departure_time, scheduled_departure_time
+        return (
+            tracked_departure_time, scheduled_departure_time,
+            tracked_arrival_time, scheduled_arrival_time,
+        )
 
     def cast_as_time(self, time_as_string):
         t = datetime.datetime.strptime(time_as_string, "%H:%M")

@@ -5,14 +5,13 @@ import re
 import os
 import csv
 
+from django.conf import settings
+
 from utils import strip
 
 # probably this shouldn't be hard coded and it should be passed in by flo.yaml,
 # but this is a good way to get started
-GTFS_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    '..', 'data', 'metra_gtfs',
-)
+GTFS_DIR = os.path.join(settings.PROJECT_ROOT, '..', 'data', 'metra_gtfs')
 
 def get_train_number(trip_id):
     """Get the train number that is associated with this trip_id"""

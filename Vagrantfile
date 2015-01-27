@@ -30,6 +30,11 @@ Vagrant.configure("2") do |config|
     vb.customize ["modifyvm", :id, "--ioapic", "on"]
     vb.customize ["modifyvm", :id, "--cpus", "2"]
     vb.customize ["modifyvm", :id, "--memory", "2048"]
+
+    # super slow network connection for some reason. delightful.
+    # http://serverfault.com/a/595010/127012
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
   end
 
   ################################################################# LOCAL SERVER

@@ -9,9 +9,6 @@ from django.conf import settings
 
 from utils import strip
 
-# probably this shouldn't be hard coded and it should be passed in by flo.yaml,
-# but this is a good way to get started
-GTFS_DIR = os.path.join(settings.PROJECT_ROOT, '..', 'data', 'metra_gtfs')
 
 def get_train_number(trip_id):
     """Get the train number that is associated with this trip_id"""
@@ -25,13 +22,13 @@ def get_route(trip_id):
     return trip_id.split('_')[0]
 
 
-def get_stations(trip_id, gtfs_dir=GTFS_DIR):
+def get_stations(trip_id):
     """get all of the stations that are associated with this trip_id"""
 
     # read in the stop times to find all of the trips. this information
     # needs to be passed along to the
     stations = []
-    with open(os.path.join(gtfs_dir, 'stop_times.txt')) as stream:
+    with open(os.path.join(settings.GTFS_DIR, 'stop_times.txt')) as stream:
         reader = csv.DictReader(stream)
         for row in map(strip, reader):
             if row['trip_id'] == trip_id:

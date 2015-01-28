@@ -60,4 +60,4 @@ data/
 
 # ignore things that are built during provisioning
 /server_config.ini
-/web/web/settings/local.py
+/www/web/settings/local.py

@@ -25,10 +25,10 @@ class Punchcard(models.Model):
         max_length=63,
         help_text="the stop_id (station name) from stop_times.txt",
     )
-    scheduled_departure_time = models.DateTimeField(
+    scheduled_time = models.DateTimeField(
         help_text="the scheduled departure time according to stop_times.txt",
     )
-    tracker_departure_time = models.DateTimeField(
+    tracked_time = models.DateTimeField(
         help_text=(
             "the last 'estimated' departure time that is captured from the "
             "rail time tracker"

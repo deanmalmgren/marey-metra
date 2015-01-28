@@ -22,6 +22,7 @@ from django.core.management.base import BaseCommand, CommandError
 import requests
 
 import base.gtfs as gtfs
+from base.models import Punchcard
 
 
 class MockResponse(object):
@@ -63,8 +64,8 @@ class Command(BaseCommand):
         # for each station, query the rail time tracker API until we have the last
         # possible 'tracked departure time', which corresponds with the actual
         # departure time
-        tracked_departure_times = dict.fromkeys(stations, None)
-        scheduled_departure_times = dict.fromkeys(stations, None)
+        tracked_times = dict.fromkeys(stations, None)
+        scheduled_times = dict.fromkeys(stations, None)
         is_done = dict.fromkeys(stations, False)
         while not all(is_done.values()):
 
@@ -75,22 +76,36 @@ class Command(BaseCommand):
                         route, train_number, origin_station, stations[-1],
                     )
                     if isinstance(a, datetime.datetime):
-                        tracked_departure_times[origin_station] = a
-                        scheduled_departure_times[origin_station] = b
-                        tracked_departure_times[stations[-1]] = c
-                        scheduled_departure_times[stations[-1]] = d
+                        tracked_times[origin_station] = a
+                        scheduled_times[origin_station] = b
+                        tracked_times[stations[-1]] = c
+                        scheduled_times[stations[-1]] = d
                     else:
                         is_done[origin_station] = True
                         is_done[stations[-1]] = True
 
             # pause for a bit before making another round of requests
-            for station in stations:
-                print station, is_done[station], tracked_departure_times[station],\
-                    scheduled_departure_times[station]
-            print ''
+            self.update_progress(stations, is_done, tracked_times, scheduled_times)
             time.sleep(sleep_time)
 
-        # TODO save everything to a database or something
+        # save everything to a database or something
+        for station in stations:
+            punchcard = Punchcard(
+                trip_id=trip_id,
+                distance_traveled=0,
+                stop_id=station,
+                scheduled_time=scheduled_times[station],
+                tracked_time=tracked_times[station],
+            )
+            punchcard.save()
+        print "...done"
+
+    def update_progress(self, stations, is_done, tracked_times, scheduled_times):
+        for station in stations:
+            print station, is_done[station], tracked_times[station],\
+                scheduled_times[station]
+        print ''
+
 
     def query_rail_time_tracker(self, route, train_number, origin, destination):
         # prepare the post data to the API
@@ -114,7 +129,6 @@ class Command(BaseCommand):
         tracked_departure_time, scheduled_departure_time = None, None
         tracked_arrival_time, scheduled_arrival_time = None, None
         for i in range(1,3):
-            print result.keys()
             train = result['train%d' % i]
             if int(train['train_num']) == train_number:
                 if train['hasData']:

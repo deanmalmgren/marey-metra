@@ -22,7 +22,9 @@ def get_env_setting(setting):
 
 # Your project root
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__) + "../../../")
-GTFS_DIR = os.path.join(PROJECT_ROOT, 'data', 'metra_gtfs')
+GTFS_DIR = os.path.abspath(
+    os.path.join(PROJECT_ROOT, '..', 'data', 'metra_gtfs')
+)
 
 SUPPORTED_NONLOCALES = ['media', 'admin', 'static']
 

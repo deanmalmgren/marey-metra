@@ -128,8 +128,9 @@ class Command(BaseCommand):
         # extract the tracked departure time for this train
         tracked_departure_time, scheduled_departure_time = None, None
         tracked_arrival_time, scheduled_arrival_time = None, None
-        for i in range(1,3):
-            train = result['train%d' % i]
+        is_train = lambda key: key.startswith('train')
+        for key in filter(is_train, result.keys()):
+            train = result[key]
             if int(train['train_num']) == train_number:
                 if train['hasData']:
                     tracked_departure_time = train['estimated_dpt_time']

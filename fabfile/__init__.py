@@ -1,11 +1,11 @@
-# 3rd party
-from fabric.api import env, task, execute
+import os
 
-# local
+from fabric.api import env, task, execute
+from fabtools.vagrant import vagrant
+
 import utils
 import provision
-
-from fabtools.vagrant import vagrant
+import launch
 
 # shared environment between local machines and remote machines
 # (anything that is different gets overwritten in environment-setting
@@ -14,19 +14,27 @@ env.mysql_root_password = 'tiyp,marey'
 env.django_user = 'marey'
 env.django_password = 'tiyp,marey'
 env.django_db = 'marey'
-
+env.repository_path = 'git@github.com:deanmalmgren/marey-metra.git'
+env.ssh_directory = os.path.expanduser(os.path.join('~', '.ssh'))
 
 @task
 def dev():
     """define development server"""
     env.provider = "virtualbox"
     env.remote_path = '/vagrant'
-    utils.set_hosts_from_config()
+    env.config_type = 'development'
+    env.use_repository = False
 
-    # TODO do we want to start all the hosts?
-    # or just the first one?
-    if env.hosts:
-        execute(vagrant, env.hosts[0])
-    else:
-        msg = "No hosts defined in the configuration file"
-        raise FabricException(msg)
+    utils.set_hosts_from_config()
+    execute(vagrant, env.hosts[0])
+
+@task
+def prod():
+    env.provider = "digitalocean"
+    env.remote_path = '/srv/www/marey-metra'
+    env.config_type = 'production'
+    env.branch = 'master'
+    env.site_name = 'marey-metra.datasco.pe'
+    env.use_repository = True
+
+    utils.set_env_with_ssh('marey-metra')

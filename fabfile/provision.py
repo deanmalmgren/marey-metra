@@ -35,14 +35,6 @@ def apt_get_update(max_age=86400*7):
 
 @task
 @decorators.needs_environment
-def python_packages():
-    """install python packages"""
-    filename = os.path.join(utils.remote_requirements_root(), "python")
-    fabtools.require.python.requirements(filename, use_sudo=True)
-
-
-@task
-@decorators.needs_environment
 def debian_packages():
     """install debian packages"""
     filename = os.path.join(utils.requirements_root(), "debian")
@@ -52,12 +44,39 @@ def debian_packages():
             packages.append(line.split('#', 1)[0].strip())
         fabtools.require.deb.packages(packages)
 
+@task
+@decorators.needs_environment
+def fetch_repo():
+    """Fetch and update the working copy of a git repository."""
+
+    # this will avoid prompt for known hosts the first time
+    # echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
+    fabtools.require.git.working_copy(
+        env.repository_path,
+        path=env.remote_path,
+        branch=env.branch,
+        use_sudo=True,
+        user=env.user,
+        update=True,
+    )
+
+
+@task
+@decorators.needs_environment
+def python_packages():
+    """install python packages"""
+    filename = os.path.join(utils.remote_requirements_root(), "python")
+    fabtools.require.python.requirements(filename, use_sudo=True)
+
 
 @task
 @decorators.needs_environment
 def packages():
     """install all packages"""
     debian_packages()
+    if env.use_repository:
+        fetch_repo()
     python_packages()
 
 
@@ -72,27 +91,8 @@ def setup_shell_environment():
         '.bash_profile',
     )
     fabtools.require.files.file(
-        path="/home/vagrant/.bash_profile",
-        contents="cd /vagrant",
-    )
-
-
-@task
-@decorators.needs_environment
-def setup_analysis():
-    """prepare analysis environment"""
-
-    # write a analysis.ini file that has the provider so we can
-    # easily distinguish between development and production
-    # environments when we run our analysis
-    template = os.path.join(
-        utils.fabfile_templates_root(),
-        "server_config.ini",
-    )
-    fabtools.require.files.template_file(
-        path="/vagrant/server_config.ini",
-        template_source=template,
-        context=env,
+        path="/home/%(user)s/.bash_profile" % env,
+        contents="cd %(remote_path)s" % env,
     )
 
 
@@ -125,6 +125,36 @@ def setup_django():
     # if env.config_type != 'dev':
     #     with cd(env.remote_path):
     #         run("./manage.py collectstatic --noinput")
+
+
+@task
+@decorators.needs_environment
+def configure_apache():
+
+    template = os.path.join(
+        utils.fabfile_templates_root(),
+        "apache.%s.conf" % env.config_type,
+    )
+
+    # require that apache is set up with modwsgi
+    fabtools.require.apache.server()
+    fabtools.require.deb.package('libapache2-mod-wsgi')
+    fabtools.require.apache.module_enabled("wsgi")
+    fabtools.require.apache.module_enabled("rewrite")
+    fabtools.require.apache.module_enabled("expires")
+
+    # enable site with the given configuration
+    fabtools.require.apache.site(
+        env.site_name,
+        template_source=template,
+        site_name=env.site_name,
+        site_root=os.path.join(env.remote_path, 'www'),
+    )
+    fabtools.require.apache.disabled('000-default')
+
+    # set permissions so that apache can read/write
+    sudo("chgrp -R www-data %s" % env.remote_path)
+    sudo("chmod -R g+w %s" % env.remote_path)
 
 
 def set_timezone(timezone='America/Chicago', restart_services=()):
@@ -185,6 +215,8 @@ def default(do_rsync=True):
     # set up anything else that should be done on the virtual machine
     # to get it into the same state for everyone
     setup_shell_environment()
-    setup_analysis()
     setup_database()
     setup_django()
+
+    if env.site_name:
+        configure_apache()

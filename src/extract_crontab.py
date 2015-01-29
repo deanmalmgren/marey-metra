@@ -79,9 +79,3 @@ for trip_id, service_id in trip_services.iteritems():
 
     if "UP-W" in trip_id:
         print minutes, hours, '*', '*', days, command
-
-
-#     print >> sys.stderr, first_stop, trip_id, service_id
-#     fuck
-
-# print >> sys.stderr, trip_services

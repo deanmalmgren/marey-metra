@@ -64,14 +64,27 @@ www_path = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     'www',
 )
+delta = 5
 for trip_id, service_id in trip_services.iteritems():
     trips[trip_id].sort()
 
-    # get the hours and minutes
+    # get the hours and minutes. importantly, we need to start the rail time
+    # tracker querying 5 minutes before the train leaves
     first_stop = trips[trip_id][0][-1]
-    hours, minutes, secondes = first_stop.split(':')
+    hours, minutes, seconds = map(int, first_stop.split(':'))
     day_indices = [i for i, yes in enumerate(services[service_id]) if yes]
     days = ','.join(map(str, day_indices))
+    if minutes>=delta:
+        minutes -= delta
+    elif hours>0:
+        hours -= 1
+        minutes = minutes - delta + 60
+    else:
+        raise ValueError("this means that the days are jacked, too. great")
+    minutes = str(minutes).zfill(2)
+    hours = str(hours).zfill(2)
+
+    # create the command
     command = (
         "cd %s && "
         "./manage.py query_rail_time_tracker %s > /dev/null"

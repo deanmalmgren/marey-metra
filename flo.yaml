@@ -23,12 +23,6 @@ depends:
   - data/metra_gtfs/
 command: python {{depends|join(' ')}} > {{creates}}
 
-# ############################################################ on-time information
-# ---
-# creates: data/kk.json
-# depends: src/query_rail_time_tracker.py
-# command: python {{depends}} > {{creates}}
-
 
 ############################################### proof of concept from foia data
 

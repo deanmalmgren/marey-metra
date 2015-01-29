@@ -16,6 +16,7 @@ env.django_password = 'tiyp,marey'
 env.django_db = 'marey'
 env.repository_path = 'git@github.com:deanmalmgren/marey-metra.git'
 env.ssh_directory = os.path.expanduser(os.path.join('~', '.ssh'))
+env.site_name = 'marey-metra.datasco.pe'
 
 @task
 def dev():
@@ -34,7 +35,6 @@ def prod():
     env.remote_path = '/srv/www/marey-metra'
     env.config_type = 'production'
     env.branch = 'master'
-    env.site_name = 'marey-metra.datasco.pe'
     env.use_repository = True
 
     utils.set_env_with_ssh('marey-metra')

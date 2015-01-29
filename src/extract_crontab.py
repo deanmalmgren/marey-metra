@@ -11,12 +11,19 @@ import csv
 import collections
 import re
 
-from utils import strip
-
 gtfs_dir = sys.argv[1]
 
 def is_one(value):
     return 1 == int(value)
+
+def strip(row):
+    """strip all extra space off of native python objects"""
+    if isinstance(row, dict):
+        return dict((k.strip(), v.strip()) for k, v in row.iteritems())
+    elif isinstance(row, list):
+        return [x.strip() for x in row]
+    else:
+        raise TypeError
 
 # read in the schedules
 services = {}
@@ -47,10 +54,10 @@ with open(os.path.join(gtfs_dir, 'stop_times.txt')) as stream:
         ))
 
 # print out the crontab
-script_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    'query_rail_time_tracker.py',
-)
+print "MAILTO=dean.malmgren@datascopeanalytics.com"
+print "PATH=/usr/sbin:/usr/bin:/sbin:/bin"
+print ""
+www_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'www')
 for trip_id, service_id in trip_services.iteritems():
     trips[trip_id].sort()
 
@@ -59,10 +66,13 @@ for trip_id, service_id in trip_services.iteritems():
     hours, minutes, secondes = first_stop.split(':')
     day_indices = [i for i, yes in enumerate(services[service_id]) if yes]
     days = ','.join(map(str, day_indices))
-    command = "python %s %s" % (script_path, trip_id)
+    command = (
+        "cd %s && "
+        "./manage.py query_rail_time_tracker %s > /dev/null"
+    ) % (www_path, trip_id)
 
-
-    print minutes, hours, '*', '*', days, '*', command
+    if "UP-W" in trip_id:
+        print minutes, hours, '*', '*', days, command
 
 
 #     print >> sys.stderr, first_stop, trip_id, service_id

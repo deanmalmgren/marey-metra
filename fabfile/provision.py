@@ -193,6 +193,14 @@ def require_timezone(timezone='America/Chicago', restart_services=()):
             (result.return_code, command)
         raise FabricException(msg)
 
+@task
+def setup_cron():
+
+    # install postfix to send emails with any output
+    fabtools.require.postfix.server(env.site_name)
+    with cd(env.remote_path):
+        run("flo run data/crontab")
+        run("crontab - < data/crontab")
 
 @task(default=True)
 @decorators.needs_environment
@@ -220,3 +228,4 @@ def default(do_rsync=True):
 
     if env.site_name:
         configure_apache()
+        setup_cron()

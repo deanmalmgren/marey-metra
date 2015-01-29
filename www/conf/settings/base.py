@@ -33,7 +33,7 @@ SUPPORTED_NONLOCALES = ['media', 'admin', 'static']
 LANGUAGE_CODE = 'en-us'
 
 # Defines the views served for root URLs.
-ROOT_URLCONF = 'web.urls'
+ROOT_URLCONF = 'conf.urls'
 
 # Application definition
 INSTALLED_APPS = (
@@ -177,7 +177,7 @@ def custom_show_toolbar(request):
 
 DEBUG_TOOLBAR_CONFIG = {
     'INTERCEPT_REDIRECTS': False,
-    'SHOW_TOOLBAR_CALLBACK': 'web.settings.base.custom_show_toolbar',
+    'SHOW_TOOLBAR_CALLBACK': 'conf.settings.base.custom_show_toolbar',
     'HIDE_DJANGO_SQL': True,
     'TAG': 'body',
     'SHOW_TEMPLATE_CONTEXT': True,
@@ -210,7 +210,7 @@ DEBUG_TOOLBAR_CONFIG = {
 FILE_UPLOAD_PERMISSIONS = 0o0664
 
 # The WSGI Application to use for runserver
-WSGI_APPLICATION = 'web.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 # Define your database connections
 DATABASES = {

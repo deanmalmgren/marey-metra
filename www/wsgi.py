@@ -2,7 +2,7 @@ import os
 import sys
 
 # Add the app code to the path
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__) + "/../")
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
 os.environ['CELERY_LOADER'] = 'django'

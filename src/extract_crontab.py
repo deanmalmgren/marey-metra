@@ -16,6 +16,9 @@ gtfs_dir = sys.argv[1]
 def is_one(value):
     return 1 == int(value)
 
+# this was copied over from www.base.utils could alternatively create a soft
+# link to the utils.py file to make this a little easier and not have to muck
+# with python paths
 def strip(row):
     """strip all extra space off of native python objects"""
     if isinstance(row, dict):
@@ -57,7 +60,10 @@ with open(os.path.join(gtfs_dir, 'stop_times.txt')) as stream:
 print "MAILTO=dean.malmgren@datascopeanalytics.com"
 print "PATH=/usr/sbin:/usr/bin:/sbin:/bin"
 print ""
-www_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'www')
+www_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'www',
+)
 for trip_id, service_id in trip_services.iteritems():
     trips[trip_id].sort()
 

@@ -56,6 +56,9 @@ with open(os.path.join(gtfs_dir, 'stop_times.txt')) as stream:
             row['departure_time'],
         ))
 
+def add_one_day(day_index):
+    return str( (day_index+1) % 7 )
+
 # print out the crontab
 print "MAILTO=dean.malmgren@datascopeanalytics.com"
 print "PATH=/usr/sbin:/usr/bin:/sbin:/bin"
@@ -69,20 +72,27 @@ for trip_id, service_id in trip_services.iteritems():
     trips[trip_id].sort()
 
     # get the hours and minutes. importantly, we need to start the rail time
-    # tracker querying 5 minutes before the train leaves
+    # tracker querying 5 minutes before the train leaves, so we need to do some
+    # time hacking
     first_stop = trips[trip_id][0][-1]
     hours, minutes, seconds = map(int, first_stop.split(':'))
-    day_indices = [i for i, yes in enumerate(services[service_id]) if yes]
-    days = ','.join(map(str, day_indices))
     if minutes>=delta:
         minutes -= delta
     elif hours>0:
         hours -= 1
         minutes = minutes - delta + 60
-    else:
-        raise ValueError("this means that the days are jacked, too. great")
+        if hours < 0:
+            hours += 24
     minutes = str(minutes).zfill(2)
     hours = str(hours).zfill(2)
+
+    # by inspection, its clear that no trains leave before 4:00 am so we can
+    # safely add a day to the crontab when necessary
+    day_indices = [i for i, yes in enumerate(services[service_id]) if yes]
+    if int(hours) < 4:
+        days = ','.join(map(add_one_day, day_indices))
+    else:
+        days = ','.join(map(str, day_indices))
 
     # create the command
     command = (

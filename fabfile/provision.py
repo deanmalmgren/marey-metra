@@ -113,7 +113,7 @@ def setup_django():
     """
     fabtools.files.upload_template(
         "django_local_settings.py",
-        "%s/web/web/settings/local.py" % env.remote_path,
+        "%s/www/conf/settings/local.py" % env.remote_path,
         context=env,
         use_jinja=True,
         template_dir=utils.fabfile_templates_root(),

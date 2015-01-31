@@ -2,6 +2,52 @@
 
 from django.db import models
 
+import gtfs
+
+class Route(models.Model):
+    """This is something like UP-W"""
+    name = models.CharField(max_length=255, unique=True)
+
+class Station(models.Model):
+    """This is used to store information about particular stations"""
+    class Meta:
+        unique_together = ('route', 'name')
+        order_by = ('route', 'distance_from_chicago')
+    route = models.ForeignKey(Route)
+    name = models.CharField(max_length=255)
+    distance_from_chicago = models.FloatField()
+    distance_from_endpoint = models.FloatField()
+
+class Schedule(models.Model):
+    """This is used to store the schedule information that is downloaded from
+    GTFS
+    """
+    class Meta:
+        pass
+
+    DAY_CHOICES = (
+        ("weekday", "weekday"),
+        ("saturday", "saturday"),
+        ("sunday", "sunday"),
+        ("weekend", "weekend"),
+    )
+
+    id = models.CharField(max_length=31, primary_key=True, help_text="example: UP-W_UW38_V1")
+    route = models.ForeignKey(Route)
+    station = models.ForeignKey(Station)
+    time = models.CharField(max_length=5, help_text="HH:MM")
+    days = models.CharField(choices=DAY_CHOICES)
+
+    # XXXX NOT SURE I LIKE THE IDEA OF STORING THE time AND days IN THE
+    # DATABASE. ITS KINDA NICE TO BE ABLE TO HAVE THE DATETIME STORED ON THE
+    # PUNCHCARD FOR QUICK SUBTRACTION OF DATE OBJECTS...
+
+    @property
+    def train_number(self):
+        return gtfs.get_train_number(self.id)
+    @property
+    def version(self):
+        return gtfs.get_version(self.id)
 
 class Punchcard(models.Model):
     """there are some really obvious ways to normalize this database to be

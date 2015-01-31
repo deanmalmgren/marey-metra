@@ -30,6 +30,7 @@ def get_version(trip_id):
 def get_train_info(trip_id):
     return get_route(trip_id), get_train_number(trip_id), get_version(trip_id)
 
+
 def get_stations(trip_id):
     """get all of the stations that are associated with this trip_id"""
 

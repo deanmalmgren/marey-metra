@@ -53,7 +53,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         # get the trip id command line argument
-        trip_id = args[0]
+        self.trip_id = trip_id = args[0]
         sleep_time = kwargs['sleep_time']
 
         # use the trip id to get a bunch of other information from gtfs
@@ -72,9 +72,16 @@ class Command(BaseCommand):
             # for each station along this route, query the rail time tracker API
             for origin_station in stations[:-1]:
                 if not is_done[origin_station]:
-                    a, b, c, d = self.query_rail_time_tracker(
-                        route, train_number, origin_station, stations[-1],
-                    )
+                    try:
+                        a, b, c, d = self.query_rail_time_tracker(
+                            route, train_number, origin_station, stations[-1],
+                        )
+                    except Exception, e:
+                        sys.stderr.write(self.get_error_message(
+                            origin_station, stations[-1],
+                        ))
+                        sys.stderr.write('\n\n' + '-'*80 + '\n\n')
+                        raise e
                     if isinstance(a, datetime.datetime):
                         tracked_times[origin_station] = a
                         scheduled_times[origin_station] = b
@@ -106,6 +113,15 @@ class Command(BaseCommand):
                 scheduled_times[station]
         print ''
 
+    def get_error_message(self, origin, destination):
+        trip_id = self.trip_id
+        return (
+            'Exception raised when querying the rail time tracker for trip '
+            '%(trip_id)s traveling from %(origin)s to %(destination)s. \n\n'
+        ) % locals() + (
+            'Response back from server: \n\n%s\n\n'
+        ) % json.dumps(json.loads(self.response.text), indent=2, sort_keys=True)
+
 
     def query_rail_time_tracker(self, route, train_number, origin, destination):
         # prepare the post data to the API
@@ -116,14 +132,14 @@ class Command(BaseCommand):
         }
 
         # make requests until we get an 'OK' response
-        response = MockResponse()
-        while response.status_code != 200:
-            response = requests.get(
+        self.response = MockResponse()
+        while self.response.status_code != 200:
+            self.response = requests.get(
                 "http://metrarail.com/content/metra/en/home/jcr:content/trainTracker.get_train_data.json",
                 params=request_data,
                 headers=self.headers
             )
-        result = json.loads(response.text)
+        result = json.loads(self.response.text)
 
         # extract the tracked departure time for this train
         tracked_departure_time, scheduled_departure_time = None, None

@@ -10,3 +10,4 @@ libffi-dev
 python-dev
 emacs
 zip
+libmysqlclient-dev

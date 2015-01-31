@@ -148,14 +148,14 @@ class Command(BaseCommand):
         for key in filter(is_train, result.keys()):
             train = result[key]
             if int(train['train_num']) == train_number:
+                scheduled_departure_time = train['scheduled_dpt_time'] + train['schDepartInTheAM']
+                scheduled_arrival_time = train['scheduled_arv_time'] + train['schArriveInTheAM']
                 if train['hasData']:
-                    tracked_departure_time = train['estimated_dpt_time']
-                    scheduled_departure_time = train['scheduled_dpt_time']
-                    tracked_arrival_time = train['estimated_arv_time']
-                    scheduled_arrival_time = train['scheduled_arv_time']
+                    tracked_departure_time = train['estimated_dpt_time'] + train['estDepartInTheAM']
+                    tracked_arrival_time = train['estimated_arv_time'] + train['estArriveInTheAM']
                 else:
-                    tracked_departure_time = scheduled_departure_time = train['scheduled_dpt_time']
-                    tracked_arrival_time = scheduled_arrival_time = train['scheduled_arv_time']
+                    tracked_departure_time = scheduled_departure_time
+                    tracked_arrival_time = scheduled_arrival_time
                 tracked_departure_time = self.cast_as_time(tracked_departure_time)
                 scheduled_departure_time = self.cast_as_time(scheduled_departure_time)
                 tracked_arrival_time = self.cast_as_time(tracked_arrival_time)
@@ -168,6 +168,6 @@ class Command(BaseCommand):
         )
 
     def cast_as_time(self, time_as_string):
-        t = datetime.datetime.strptime(time_as_string, "%H:%M")
+        t = datetime.datetime.strptime(time_as_string, "%I:%M%p")
         today = datetime.date.today()
         return t.replace(today.year, today.month, today.day)

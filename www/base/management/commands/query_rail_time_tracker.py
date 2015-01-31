@@ -109,8 +109,23 @@ class Command(BaseCommand):
 
     def update_progress(self, stations, is_done, tracked_times, scheduled_times):
         for station in stations:
-            print station, is_done[station], tracked_times[station],\
-                scheduled_times[station]
+            done = ' '
+            if is_done[station]:
+                done = u"\u2713"
+            if None in (tracked_times[station], scheduled_times[station]):
+                dt = ""
+            else:
+                dt = tracked_times[station] - scheduled_times[station]
+                dt = dt.seconds/60
+                if dt>0:
+                    dt = "+" + str(dt) + " late"
+                else:
+                    dt = str(dt) + " early"
+            s = "%s %20s %21s %21s  %s" % (
+                done, station, tracked_times[station],
+                scheduled_times[station], dt
+            )
+            print s.encode('utf-8')
         print ''
 
     def get_error_message(self, origin, destination):

@@ -27,7 +27,7 @@ from base.models import Punchcard
 
 class MockResponse(object):
     status_code = None
-
+    text = '{}'
 
 class Command(BaseCommand):
     args = '<trip_id>'
@@ -134,8 +134,9 @@ class Command(BaseCommand):
             'Exception raised when querying the rail time tracker for trip '
             '%(trip_id)s traveling from %(origin)s to %(destination)s. \n\n'
         ) % locals() + (
-            'Response back from server: \n\n%s\n\n'
-        ) % json.dumps(json.loads(self.response.text), indent=2, sort_keys=True)
+            'Response (%s) back from server: \n\n%s\n\n'
+        ) % (self.response.status_code,
+             json.dumps(json.loads(self.response.text), indent=2, sort_keys=True))
 
 
     def query_rail_time_tracker(self, route, train_number, origin, destination):

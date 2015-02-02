@@ -27,7 +27,7 @@ from base.models import Punchcard
 
 class MockResponse(object):
     status_code = None
-    text = '{}'
+
 
 class Command(BaseCommand):
     args = '<trip_id>'
@@ -130,14 +130,20 @@ class Command(BaseCommand):
 
     def get_error_message(self, origin, destination):
         trip_id = self.trip_id
-        return (
+        msg = (
             'Exception raised when querying the rail time tracker for trip '
             '%(trip_id)s traveling from %(origin)s to %(destination)s. \n\n'
-        ) % locals() + (
-            'Response (%s) back from server: \n\n%s\n\n'
-        ) % (self.response.status_code,
-             json.dumps(json.loads(self.response.text), indent=2, sort_keys=True))
-
+        ) % locals()
+        msg += (
+            'Response (%s) back from server: '
+        ) % (self.response.status_code, )
+        try:
+            msg += '\n\n%s\n\n' % (
+                 json.dumps(json.loads(self.response.text), indent=2, sort_keys=True)
+            )
+        except:
+            pass
+        return msg
 
     def query_rail_time_tracker(self, route, train_number, origin, destination):
         # prepare the post data to the API

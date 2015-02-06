@@ -36,7 +36,7 @@ class Command(BaseCommand):
         make_option('-s', '--sleep-time',
             action='store',
             type='int',
-            dest='sleep_time',
+            dest='min_sleep_time',
             default=30,
             help=(
                 'amount of time to sleep between Rail Time Tracker pings. '
@@ -50,11 +50,15 @@ class Command(BaseCommand):
         'User-Agent': "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"
     }
 
+    # use this to tune how frequently this scripts hits the rail time tracker
+    # API
+    n_stations = 3
+
     def handle(self, *args, **kwargs):
 
         # get the trip id command line argument
         self.trip_id = trip_id = args[0]
-        sleep_time = kwargs['sleep_time']
+        min_sleep_time = kwargs['min_sleep_time']
 
         # use the trip id to get a bunch of other information from gtfs
         route = gtfs.get_route(trip_id)
@@ -69,7 +73,11 @@ class Command(BaseCommand):
         is_done = dict.fromkeys(stations, False)
         while not all(is_done.values()):
 
-            # for each station along this route, query the rail time tracker API
+            # for each station along this route, query the rail time tracker
+            # API. The We try to do this as nicely as possible for the API, so
+            # we only query the next n_stations stations that aren't done.
+            n = 0
+            next_station = None
             for origin_station in stations[:-1]:
                 if not is_done[origin_station]:
                     try:
@@ -91,9 +99,30 @@ class Command(BaseCommand):
                         is_done[origin_station] = True
                         is_done[stations[-1]] = True
 
-            # pause for a bit before making another round of requests
-            self.update_progress(stations, is_done, tracked_times, scheduled_times)
-            time.sleep(sleep_time)
+                    # only look at the next n_stations that aren't yet done to
+                    # be as friendly as possible to the API
+                    next_station = next_station or origin_station
+                    n += 1
+                    if n >= self.n_stations:
+                        break
+
+            # update progress to stdout
+            self.update_progress(
+                stations, is_done, tracked_times, scheduled_times
+            )
+
+            # pause for a bit before making another round of requests. to be as
+            # friendly to the API as possible, this tunes the time to be the
+            # maximum of the specified min_sleep_time or half of the time to the
+            # next train's estimated arrival
+            now = datetime.datetime.now()
+            next_time = tracked_times[next_station]
+            if next_time < now:
+                sleep_time = min_sleep_time
+            else:
+                dt = tracked_times[next_station] - datetime.datetime.now()
+                sleep_time = max(min_sleep_time, dt.seconds/2)
+            self.countdown(sleep_time, next_station)
 
         # save everything to a database or something
         for station in stations:
@@ -106,6 +135,16 @@ class Command(BaseCommand):
             )
             punchcard.save()
         print "...done"
+
+    def countdown(self, sleep_time, next_station):
+        for i in range(sleep_time, 0, -1):
+            sys.stdout.write((
+                "Next stop %(next_station)s. "
+                "Repinging API in %(i)3d seconds...\r"
+            ) % locals())
+            sys.stdout.flush()
+            time.sleep(1)
+        sys.stdout.write('\n')
 
     def update_progress(self, stations, is_done, tracked_times, scheduled_times):
         for station in stations:

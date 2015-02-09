@@ -90,9 +90,9 @@ class Command(BaseCommand):
         we only query the next n_stations stations that aren't done.
         """
         n = 0
+        is_first_time = len(set(self.scheduled_times.values())) == 1
         self.next_station = None
         for origin_station in self.stations[:-1]:
-            print origin_station
             if not self.is_done[origin_station]:
                 try:
                     a, b, c, d = self.query_rail_time_tracker(
@@ -111,10 +111,20 @@ class Command(BaseCommand):
                     self.is_done[origin_station] = True
                     self.is_done[self.stations[-1]] = True
 
-                # only look at the next n_stations that aren't yet done to
-                # be as friendly as possible to the API
-                self.next_station = self.next_station or origin_station
-                n += 1
+                # only look at the next n_stations that aren't yet done to be as
+                # friendly as possible to the API. The is_first_time fanciness
+                # is intended to make it possible to debug trains that are
+                # currently running down the track but have already started
+                if is_first_time:
+                    if all((
+                        self.next_station is None,
+                        self.tracked_times[origin_station] is not None,
+                        not self.is_done[origin_station],
+                    )):
+                        self.next_station = origin_station
+                else:
+                    self.next_station = self.next_station or origin_station
+                    n += 1
                 if n >= self.n_stations:
                     break
 
@@ -125,8 +135,6 @@ class Command(BaseCommand):
         next train's estimated arrival
         """
         now = datetime.datetime.now()
-        print self.tracked_times
-        print self.scheduled_times
         next_time = self.tracked_times[self.next_station]
         if next_time < now:
             sleep_time = self.min_sleep_time

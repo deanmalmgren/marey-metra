@@ -57,84 +57,79 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         # get the trip id command line argument
-        self.trip_id = trip_id = args[0]
-        min_sleep_time = kwargs['min_sleep_time']
+        self.trip_id = args[0]
+        self.min_sleep_time = kwargs['min_sleep_time']
 
         # use the trip id to get a bunch of other information from gtfs
-        route = gtfs.get_route(trip_id)
-        train_number = gtfs.get_train_number(trip_id)
-        stations = gtfs.get_stations(trip_id)
+        self.route = gtfs.get_route(self.trip_id)
+        self.train_number = gtfs.get_train_number(self.trip_id)
+        self.stations = gtfs.get_stations(self.trip_id)
 
         # for each station, query the rail time tracker API until we have the last
         # possible 'tracked departure time', which corresponds with the actual
         # departure time
-        tracked_times = dict.fromkeys(stations, None)
-        scheduled_times = dict.fromkeys(stations, None)
-        is_done = dict.fromkeys(stations, False)
-        while not all(is_done.values()):
-
-            # for each station along this route, query the rail time tracker
-            # API. The We try to do this as nicely as possible for the API, so
-            # we only query the next n_stations stations that aren't done.
-            n = 0
-            next_station = None
-            for origin_station in stations[:-1]:
-                if not is_done[origin_station]:
-                    try:
-                        a, b, c, d = self.query_rail_time_tracker(
-                            route, train_number, origin_station, stations[-1],
-                        )
-                    except Exception, e:
-                        sys.stderr.write(self.get_error_message(
-                            origin_station, stations[-1],
-                        ))
-                        sys.stderr.write('\n\n' + '-'*80 + '\n\n')
-                        raise e
-                    if isinstance(a, datetime.datetime):
-                        tracked_times[origin_station] = a
-                        scheduled_times[origin_station] = b
-                        tracked_times[stations[-1]] = c
-                        scheduled_times[stations[-1]] = d
-                    else:
-                        is_done[origin_station] = True
-                        is_done[stations[-1]] = True
-
-                    # only look at the next n_stations that aren't yet done to
-                    # be as friendly as possible to the API
-                    next_station = next_station or origin_station
-                    n += 1
-                    if n >= self.n_stations:
-                        break
-
-            # update progress to stdout
-            self.update_progress(
-                stations, is_done, tracked_times, scheduled_times
-            )
-
-            # pause for a bit before making another round of requests. to be as
-            # friendly to the API as possible, this tunes the time to be the
-            # maximum of the specified min_sleep_time or half of the time to the
-            # next train's estimated arrival
-            now = datetime.datetime.now()
-            next_time = tracked_times[next_station]
-            if next_time < now:
-                sleep_time = min_sleep_time
-            else:
-                dt = tracked_times[next_station] - datetime.datetime.now()
-                sleep_time = max(min_sleep_time, dt.seconds/2)
-            self.countdown(sleep_time, next_station)
+        self.tracked_times = dict.fromkeys(self.stations, None)
+        self.scheduled_times = dict.fromkeys(self.stations, None)
+        self.is_done = dict.fromkeys(self.stations, False)
+        while not all(self.is_done.values()):
+            self.query_all_trains()
+            self.update_progress()
+            self.pause()
 
         # save everything to a database or something
-        for station in stations:
-            punchcard = Punchcard(
-                trip_id=trip_id,
-                distance_traveled=0,
-                stop_id=station,
-                scheduled_time=scheduled_times[station],
-                tracked_time=tracked_times[station],
-            )
-            punchcard.save()
+        self.save_punchcards()
         print "...done"
+
+    def query_all_trains(self):
+        """for each station along this route, query the rail time tracker
+        API. The We try to do this as nicely as possible for the API, so
+        we only query the next n_stations stations that aren't done.
+        """
+        n = 0
+        self.next_station = None
+        for origin_station in self.stations[:-1]:
+            print origin_station
+            if not self.is_done[origin_station]:
+                try:
+                    a, b, c, d = self.query_rail_time_tracker(
+                        origin_station,
+                    )
+                except Exception, e:
+                    sys.stderr.write(self.get_error_message(origin_station))
+                    sys.stderr.write('\n\n' + '-'*80 + '\n\n')
+                    raise e
+                if isinstance(a, datetime.datetime):
+                    self.tracked_times[origin_station] = a
+                    self.scheduled_times[origin_station] = b
+                    self.tracked_times[self.stations[-1]] = c
+                    self.scheduled_times[self.stations[-1]] = d
+                else:
+                    self.is_done[origin_station] = True
+                    self.is_done[self.stations[-1]] = True
+
+                # only look at the next n_stations that aren't yet done to
+                # be as friendly as possible to the API
+                self.next_station = self.next_station or origin_station
+                n += 1
+                if n >= self.n_stations:
+                    break
+
+    def pause(self):
+        """pause for a bit before making another round of requests. to be as
+        friendly to the API as possible, this tunes the time to be the
+        maximum of the specified min_sleep_time or half of the time to the
+        next train's estimated arrival
+        """
+        now = datetime.datetime.now()
+        print self.tracked_times
+        print self.scheduled_times
+        next_time = self.tracked_times[self.next_station]
+        if next_time < now:
+            sleep_time = self.min_sleep_time
+        else:
+            dt = self.tracked_times[self.next_station] - datetime.datetime.now()
+            sleep_time = max(self.min_sleep_time, dt.seconds/2)
+        self.countdown(sleep_time, self.next_station)
 
     def countdown(self, sleep_time, next_station):
         for i in range(sleep_time, 0, -1):
@@ -146,23 +141,23 @@ class Command(BaseCommand):
             time.sleep(1)
         sys.stdout.write('\n')
 
-    def update_progress(self, stations, is_done, tracked_times, scheduled_times):
-        for station in stations:
+    def update_progress(self):
+        for station in self.stations:
             done = ' '
-            if is_done[station]:
+            if self.is_done[station]:
                 done = u"\u2713"
-            if None in (tracked_times[station], scheduled_times[station]):
+            if None in (self.tracked_times[station], self.scheduled_times[station]):
                 dt = ""
             else:
-                dt = tracked_times[station] - scheduled_times[station]
+                dt = self.tracked_times[station] - self.scheduled_times[station]
                 dt = dt.seconds/60
                 if dt>0:
                     dt = "+" + str(dt) + " late"
                 else:
                     dt = str(dt) + " early"
             s = "%s %20s %21s %21s  %s" % (
-                done, station, tracked_times[station],
-                scheduled_times[station], dt
+                done, station, self.tracked_times[station],
+                self.scheduled_times[station], dt
             )
             print s.encode('utf-8')
         print ''
@@ -184,12 +179,12 @@ class Command(BaseCommand):
             pass
         return msg
 
-    def query_rail_time_tracker(self, route, train_number, origin, destination):
+    def query_rail_time_tracker(self, origin):
         # prepare the post data to the API
         request_data = {
-            "line": route,
+            "line": self.route,
             "origin": origin,
-            "destination": destination,
+            "destination": self.stations[-1],
         }
 
         # make requests until we get an 'OK' response
@@ -202,13 +197,15 @@ class Command(BaseCommand):
             )
         result = json.loads(self.response.text)
 
+        print result['train1']
+
         # extract the tracked departure time for this train
         tracked_departure_time, scheduled_departure_time = None, None
         tracked_arrival_time, scheduled_arrival_time = None, None
         is_train = lambda key: key.startswith('train')
         for key in filter(is_train, result.keys()):
             train = result[key]
-            if int(train['train_num']) == train_number:
+            if int(train['train_num']) == self.train_number:
                 scheduled_departure_time = train['scheduled_dpt_time'] + train['schDepartInTheAM']
                 scheduled_arrival_time = train['scheduled_arv_time'] + train['schArriveInTheAM']
                 if train['hasData']:
@@ -232,3 +229,14 @@ class Command(BaseCommand):
         t = datetime.datetime.strptime(time_as_string, "%I:%M%p")
         today = datetime.date.today()
         return t.replace(today.year, today.month, today.day)
+
+    def save_punchcards(self):
+        for station in self.stations:
+            punchcard = Punchcard(
+                trip_id=self.trip_id,
+                distance_traveled=0,
+                stop_id=station,
+                scheduled_time=self.scheduled_times[station],
+                tracked_time=self.tracked_times[station],
+            )
+            punchcard.save()

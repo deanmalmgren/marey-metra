@@ -16,6 +16,7 @@ import sys
 import json
 import datetime
 import time
+import StringIO
 from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
@@ -55,6 +56,9 @@ class Command(BaseCommand):
     n_stations = 3
 
     def handle(self, *args, **kwargs):
+
+        # remember what time we started for debugging purposes
+        self.started_script = datetime.datetime.now()
 
         # get the trip id command line argument
         self.trip_id = args[0]
@@ -141,7 +145,8 @@ class Command(BaseCommand):
             time.sleep(1)
         sys.stdout.write('\n')
 
-    def update_progress(self):
+    def update_progress(self, stream=None):
+        stream = stream or sys.stdout
         for station in self.stations:
             done = ' '
             if self.is_done[station]:
@@ -159,15 +164,21 @@ class Command(BaseCommand):
                 done, station, self.tracked_times[station],
                 self.scheduled_times[station], dt
             )
-            print s.encode('utf-8')
-        print ''
+            stream.write(s.encode('utf-8') + '\n')
+        stream.write('\n')
 
-    def get_error_message(self, origin, destination):
+    def get_error_message(self, origin):
         trip_id = self.trip_id
+        started_script = self.started_script
+        destination = self.stations[-1]
         msg = (
+            'Script started at %(started_script)s.\n'
             'Exception raised when querying the rail time tracker for trip '
             '%(trip_id)s traveling from %(origin)s to %(destination)s. \n\n'
         ) % locals()
+        stream = StringIO.StringIO()
+        self.update_progress(stream=stream)
+        msg += stream.getvalue() + '\n\n'
         msg += (
             'Response (%s) back from server: '
         ) % (self.response.status_code, )
@@ -196,8 +207,6 @@ class Command(BaseCommand):
                 headers=self.headers
             )
         result = json.loads(self.response.text)
-
-        print result['train1']
 
         # extract the tracked departure time for this train
         tracked_departure_time, scheduled_departure_time = None, None

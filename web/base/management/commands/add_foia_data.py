@@ -118,10 +118,12 @@ class Command(BaseCommand):
                     except KeyError:
                         print "UNSCHEDULED STOP", trip_id, stop_id
                         continue # some random trains make unscheduled stops, apparently?
-                    scheduled_time.replace(tracked_time.year, tracked_time.month, tracked_time.day)
+                    scheduled_time = scheduled_time.replace(
+                        tracked_time.year, tracked_time.month, tracked_time.day,
+                    )
                     distance_traveled = distances_from_chicago[stop_id]
                     if int(row['Train Number']) % 2 == 0:
-                        distance_traveled = distances_from_chicago[stop_id] - distances_from_chicago['ELBURN']
+                        distance_traveled =  distances_from_chicago['ELBURN'] - distances_from_chicago[stop_id]
 
 
                     punchcard, created = Punchcard.objects.get_or_create(

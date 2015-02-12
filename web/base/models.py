@@ -27,7 +27,8 @@ class Punchcard(models.Model):
     """
     trip_id = models.CharField(
         max_length=63,
-        help_text="trip_id is a mashup of lots of things"
+        help_text="trip_id is a mashup of lots of things",
+        db_index=True,
     )
     station = models.ForeignKey(Station)
     scheduled_time = models.DateTimeField(

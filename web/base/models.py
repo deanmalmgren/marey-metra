@@ -12,7 +12,7 @@ class Station(models.Model):
     """This is used to store information about particular stations"""
     class Meta:
         unique_together = ('route', 'name')
-        order_by = ('route', 'distance_from_chicago')
+        ordering = ('route', 'distance_from_chicago')
     route = models.ForeignKey(Route)
     name = models.CharField(max_length=255)
     distance_from_chicago = models.FloatField()
@@ -43,6 +43,7 @@ class Punchcard(models.Model):
     @property
     def train_number(self):
         return gtfs.get_train_number(self.trip_id)
+
     @property
     def version(self):
         return gtfs.get_version(self.trip_id)

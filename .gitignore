@@ -59,4 +59,4 @@ docs/_build/
 data/
 
 # ignore things that are built during provisioning
-/www/conf/settings/local.py
+/web/conf/settings/local.py

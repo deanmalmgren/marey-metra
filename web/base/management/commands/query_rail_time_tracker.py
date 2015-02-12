@@ -1,17 +1,3 @@
-#!/usr/bin/env python
-
-"""This script polls the Rail Time Tracker
-(https://metrarail.com/metra/wap/en/home/RailTimeTracker.html) to
-determine what the current status is on a given route in the Metra
-system. You should start running this script ~5 minutes before the
-train is due to arrive in the station.
-
-pass a trip_id to this script, which then looks up the schedule for
-this particular trip and monitors its timeliness.
-
-This script is intended to be run by cron.
-"""
-
 import sys
 import json
 import datetime

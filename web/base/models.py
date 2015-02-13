@@ -6,15 +6,17 @@ import gtfs
 
 class Route(models.Model):
     """This is something like UP-W"""
-    name = models.CharField(max_length=255, unique=True)
+    id = models.CharField(max_length=255, primary_key=True)
 
 class Station(models.Model):
-    """This is used to store information about particular stations"""
+    """This is used to store information about particular stations, which is
+    kinda like the GTFS version of `stop` except a Station belongs to one route.
+    """
     class Meta:
-        unique_together = ('route', 'name')
+        unique_together = ('route', 'stop_id')
         ordering = ('route', 'distance_from_chicago')
     route = models.ForeignKey(Route)
-    name = models.CharField(max_length=255)
+    stop_id = models.CharField(max_length=255)
     distance_from_chicago = models.FloatField()
     distance_from_endpoint = models.FloatField()
 

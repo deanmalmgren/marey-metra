@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 import requests
 
 import base.gtfs as gtfs
-from base.models import Punchcard
+from base.models import Route, Station, Punchcard
 
 
 class MockResponse(object):
@@ -65,6 +65,7 @@ class Command(BaseCommand):
             self.query_all_trains()
             self.update_progress()
             self.pause()
+            break
 
         # save everything to a database or something
         self.save_punchcards()
@@ -221,7 +222,6 @@ class Command(BaseCommand):
                 scheduled_departure_time = self.cast_as_time(scheduled_departure_time)
                 tracked_arrival_time = self.cast_as_time(tracked_arrival_time)
                 scheduled_arrival_time = self.cast_as_time(scheduled_arrival_time)
-                break
 
         return (
             tracked_departure_time, scheduled_departure_time,
@@ -234,12 +234,16 @@ class Command(BaseCommand):
         return t.replace(today.year, today.month, today.day)
 
     def save_punchcards(self):
-        for station in self.stations:
+
+        route_id = gtfs.get_route(self.trip_id)
+        route = Route.objects.get(pk=route_id)
+
+        for stop_id in self.stations:
+            station = Station.objects.get(stop_id=stop_id, route=route)
             punchcard = Punchcard(
                 trip_id=self.trip_id,
-                distance_traveled=0,
-                stop_id=station,
-                scheduled_time=self.scheduled_times[station],
-                tracked_time=self.tracked_times[station],
+                station=station,
+                scheduled_time=self.scheduled_times[stop_id],
+                tracked_time=self.tracked_times[stop_id],
             )
             punchcard.save()

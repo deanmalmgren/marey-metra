@@ -4,8 +4,8 @@ import datetime
 import collections
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
 
+from ..gtfs_commands import BaseCommand
 from base.models import Punchcard
 from base import gtfs
 
@@ -15,12 +15,7 @@ class Command(BaseCommand):
         "a reliable test set"
     )
 
-    data_dir = os.path.abspath(os.path.join(settings.PROJECT_ROOT,'..','data'))
-    gtfs_dir = os.path.join(data_dir, 'metra_gtfs')
-    stop_times_txt = os.path.join(gtfs_dir, 'stop_times.txt')
-    stops_txt = os.path.join(gtfs_dir, 'stops.txt')
-    shapes_txt = os.path.join(gtfs_dir, 'shapes.txt')
-    foia_csv = os.path.join(data_dir, 'foia_arrival_departure.csv')
+    foia_csv = os.path.join(BaseCommand.data_dir, 'foia_arrival_departure.csv')
 
 
     _version_cache = {}
@@ -77,31 +72,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-        # load in the stations along the UP-W line and their corresponding
-        # stop index (which is how the distances are stored)
-        #
-        # NOTE: the important thing here is to identify an OUTBOUND train that
-        # has all the stops so you can easily figure out the stop sequence from
-        # the distances file. Probably we could just do *all* outbound trains,
-        # but this was easier to get started
-        stops = {}
-        with gtfs.CsvReader(self.stop_times_txt) as reader:
-            for row in reader:
-                if row['trip_id'].startswith('UP-W_UW25'): # UP-W_UW58
-                    stops[row['stop_id']] = int(row['stop_sequence'])
-        stop_index2stop_id = dict((v,k) for k,v in stops.iteritems())
-
-        # load in the distances for the UP-W line and match them up with the
-        # stations
-        distances_from_chicago = {}
-        with gtfs.CsvReader(self.shapes_txt) as reader:
-            for row in reader:
-                if row['shape_id'].startswith('UP-W_OB'):
-                    stop_index = int(row['shape_pt_sequence'])
-                    stop_id = stop_index2stop_id.get(stop_index, None)
-                    distance = float(row['shape_dist_traveled'])
-                    if stop_id:
-                        distances_from_chicago[stop_id] = distance
+        distances_from_chicago = self.get_distances_from_chicago()
 
         # go through the FOIA data and load the UP-W data into the database
         with gtfs.CsvReader(self.foia_csv) as reader:

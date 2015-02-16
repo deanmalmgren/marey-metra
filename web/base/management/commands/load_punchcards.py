@@ -24,6 +24,7 @@ class Command(BaseCommand):
         # TODO: this can probably be made much more efficient with LOAD DATA
         # INFILE fanciness
         with open(csv_filename) as stream:
+            stream.readline()
             reader = csv.reader(stream)
             for row in reader:
                 route_id = gtfs.get_route(row[0])

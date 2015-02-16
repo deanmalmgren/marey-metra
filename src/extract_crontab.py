@@ -65,7 +65,7 @@ print "PATH=/usr/sbin:/usr/bin:/sbin:/bin"
 print ""
 www_path = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    'www',
+    'web',
 )
 delta = 5
 for trip_id, service_id in trip_services.iteritems():

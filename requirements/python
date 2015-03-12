@@ -1,5 +1,6 @@
 requests
 flo
+Shapely
 
 # Choose your databases adapter
 #psycopg2

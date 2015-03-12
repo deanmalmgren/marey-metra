@@ -11,3 +11,4 @@ python-dev
 emacs
 zip
 libmysqlclient-dev
+libgeos-dev

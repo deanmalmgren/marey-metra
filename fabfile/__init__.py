@@ -26,6 +26,7 @@ def dev():
     env.remote_path = '/vagrant'
     env.config_type = 'development'
     env.use_repository = False
+    env.site_name = None
 
     utils.set_hosts_from_config()
     execute(vagrant, env.hosts[0])

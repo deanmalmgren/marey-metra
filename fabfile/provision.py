@@ -136,7 +136,7 @@ def setup_django():
     """
     fabtools.files.upload_template(
         "django_local_settings.py",
-        "%s/www/conf/settings/local.py" % env.remote_path,
+        "%s/web/conf/settings/local.py" % env.remote_path,
         context=env,
         use_jinja=True,
         template_dir=utils.fabfile_templates_root(),
@@ -245,7 +245,7 @@ def default(do_rsync=True):
 
     # set up anything else that should be done on the virtual machine
     # to get it into the same state for everyone
-    setup_shell_environment()
+    setup_bash()
     setup_database()
     setup_django()
 

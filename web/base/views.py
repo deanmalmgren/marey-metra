@@ -3,6 +3,6 @@
 from django.shortcuts import render
 
 
-def home(request):
+def marey(request):
     """ Default view for the root """
-    return render(request, 'base/home.html')
+    return render(request, 'base/marey.html')

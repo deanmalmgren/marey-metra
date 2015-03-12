@@ -1,0 +1,24 @@
+{% extends "_layouts/base.html" %}
+{% load staticfiles %}
+
+{% block css %}
+{{block.super}}
+<link href="{% static 'css/marey.scss' %}" rel="stylesheet" type="text/x-scss" media="all">
+{% endblock %}
+
+{% block page_title %}Marey Metra{% endblock %}
+
+{% block content %}
+<div id="marey-diagram"></div>
+{% endblock content %}
+
+{% block cdn_js %}
+{{block.super}}
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.2/d3.min.js"></script>
+{% endblock %}
+
+{% block js %}
+{{block.super}}
+<!-- <script src="data/distance.js"></script> -->
+<script src="{% static 'js/marey.js' %}"></script>
+{% endblock %}

@@ -8,9 +8,11 @@ from .models import Punchcard
 
 
 class JsonEncoder(json.JSONEncoder):
+    DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
-            return obj.isoformat()
+            return obj.strftime(self.DATETIME_FORMAT)
         return json.JSONEncoder.default(self, obj)
 
 
@@ -23,5 +25,5 @@ def marey(request):
 
     return render(request, 'base/marey.html', {
         "punchcards": json.dumps(punchcards, cls=JsonEncoder),
-
+        "DATETIME_FORMAT": JsonEncoder.DATETIME_FORMAT,
     })

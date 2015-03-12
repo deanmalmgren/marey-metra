@@ -95,19 +95,29 @@ def packages():
 
 @task
 @decorators.needs_environment
-def setup_shell_environment():
+def setup_bash():
     """setup the shell environment on the remote machine"""
 
-    # change into the /vagrant directory by default
-    template = os.path.join(
-        utils.fabfile_templates_root(),
-        '.bash_profile',
-    )
+    # download the django bash completion niceness
+    completions_directory="/home/%s/.bash_completion.d" % env.user
+    fabtools.require.directory(completions_directory)
     fabtools.require.files.file(
-        path="/home/%(user)s/.bash_profile" % env,
-        contents="cd %(remote_path)s" % env,
+        os.path.join(completions_directory, 'django'),
+        url=(
+            "https://raw.githubusercontent.com"
+            "/django/django/master/extras/django_bash_completion"
+        ),
     )
 
+    # move our template over
+    template = os.path.join(utils.fabfile_templates_root(), "bash_profile")
+    context = locals()
+    context.update(env)
+    fabtools.require.files.template_file(
+        path="/home/%s/.bash_profile" % env.user,
+        template_source=template,
+        context=context,
+    )
 
 @task
 @decorators.needs_environment

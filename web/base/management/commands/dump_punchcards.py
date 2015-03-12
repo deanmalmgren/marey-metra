@@ -14,10 +14,12 @@ class Command(BaseCommand):
         # using a database connection because its a lot faster
         cursor = connection.cursor()
         cursor.execute("""
-        SELECT trip_id, stop_id, scheduled_time, tracked_time
-        FROM base_punchcard
+        SELECT punchcard.trip_id, station.stop_id, punchcard.scheduled_time, punchcard.tracked_time
+        FROM base_punchcard AS punchcard, base_station AS station
+        WHERE punchcard.station_id=station.id
         """)
         writer = csv.writer(sys.stdout)
         writer.writerow(['trip_id','stop_id', 'scheduled_time', 'tracked_time'])
         for row in cursor:
-            writer.writerow(list(row[:2]) + map(timezone.localtime, row[2:]))
+            if None not in row[2:]:
+                writer.writerow(list(row[:2]) + map(timezone.localtime, row[2:]))

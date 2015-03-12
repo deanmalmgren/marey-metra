@@ -2,7 +2,8 @@
 
 from django.conf.urls import url, patterns
 
+from . import views
 
 urlpatterns = patterns('base.views',
-    url(r'^$', 'marey', name='marey'),
+    url(r'^$', views.marey, name='marey'),
 )

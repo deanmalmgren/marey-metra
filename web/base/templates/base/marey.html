@@ -20,5 +20,12 @@
 {% block js %}
 {{block.super}}
 <!-- <script src="data/distance.js"></script> -->
+{% autoescape off %}
+<script>
+var global_data = {
+  punchcards: {{punchcards}}
+}
+</script>
+{% endautoescape %}
 <script src="{% static 'js/marey.js' %}"></script>
 {% endblock %}

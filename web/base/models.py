@@ -50,3 +50,11 @@ class Punchcard(models.Model):
     @property
     def version(self):
         return gtfs.get_version(self.trip_id)
+
+    def to_json_dict(self):
+        return {
+            "trip_id": self.trip_id,
+            "stop_id": self.station.stop_id,
+            "scheduled_time": self.scheduled_time,
+            "tracked_time": self.tracked_time,
+        }

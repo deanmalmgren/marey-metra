@@ -83,6 +83,13 @@ want to contribute?
    vagrant up && fab dev provision
    ```
 
+5. Run the development web server with
+
+   ```bash
+   fab dev serve
+   ```
+
+
 notes on the development stack
 ==============================
 

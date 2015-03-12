@@ -83,8 +83,11 @@ function marey_diagram(punchcards, distances) {
         .tickValues(distances)
         .tickFormat(stationLabel);
 
-    var line = d3.svg.line()
+    var tracked_line = d3.svg.line()
         .x(function(d) { return x(time_of_day(d.tracked_time)); })
+        .y(function(d, i) { return y(distances[i]); });
+    var scheduled_line = d3.svg.line()
+        .x(function(d) { return x(time_of_day(d.scheduled_time)); })
         .y(function(d, i) { return y(distances[i]); });
 
     var svg = d3.select("#marey-diagram").append("svg")
@@ -113,15 +116,16 @@ function marey_diagram(punchcards, distances) {
         .attr("class", "y axis")
         .call(yAxis);
 
-    // svg.append("path")
-    //     .attr("class", "line schedule")
-    //     .datum(schedule)
-    //     .attr("d", line);
-
-    svg.selectAll("path.line")
+    svg.selectAll("path.scheduled.line")
         .data(nest).enter()
         .append("path")
-        .attr("class", "line")
-        .attr("d", function (d) {return line(d.values)});
+        .attr("class", "scheduled line")
+        .attr("d", function (d) {return scheduled_line(d.values)});
+
+    svg.selectAll("path.tracked.line")
+        .data(nest).enter()
+        .append("path")
+        .attr("class", "tracked line")
+        .attr("d", function (d) {return tracked_line(d.values)});
 
 }

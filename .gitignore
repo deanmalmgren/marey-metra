@@ -48,6 +48,7 @@ coverage.xml
 # Django stuff:
 *.log
 *.pot
+/web/static/CACHE
 
 # Sphinx documentation
 docs/_build/
@@ -60,3 +61,4 @@ data/
 
 # ignore things that are built during provisioning
 /web/conf/settings/local.py
+/requirements/ruby.lock

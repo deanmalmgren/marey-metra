@@ -72,12 +72,25 @@ def python_packages():
 
 @task
 @decorators.needs_environment
+def ruby_packages():
+    """install debian packages"""
+    with settings(warn_only=True):
+        bundler = run('which bundler')
+    if bundler.return_code:
+        sudo('gem install bundler')
+    filename = os.path.join(utils.remote_requirements_root(), "ruby")
+    run('bundle install --gemfile="%s"' % filename)
+
+
+@task
+@decorators.needs_environment
 def packages():
     """install all packages"""
     debian_packages()
     if env.use_repository:
         fetch_repo()
     python_packages()
+    ruby_packages()
 
 
 @task

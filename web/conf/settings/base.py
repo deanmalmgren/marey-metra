@@ -305,3 +305,15 @@ LOGGING = {
 #CEF_VENDOR = 'Your Company'
 #CEF_VERSION = '0'
 #CEF_DEVICE_VERSION = '0'
+
+# # we need to do this so that sass can find the project-wide scss files
+# # when we import them (for example @import "common/css/dsa_colors")
+# # from any app (for example, blog).
+# PROJECT_SCSS_ROOTS = ' --load-path '.join([
+#     os.path.join(PROJECT_ROOT, 'apps', 'main', 'static'),
+#     os.path.join(PROJECT_ROOT, 'apps', 'blog', 'static'),
+# ])
+COMPRESS_PRECOMPILERS = (
+    ("text/x-scss", 'sass --scss'),# --load-path %s' % PROJECT_SCSS_ROOTS),
+    ("text/x-sass", 'sass'), # --load-path %s' % PROJECT_SCSS_ROOTS),
+)

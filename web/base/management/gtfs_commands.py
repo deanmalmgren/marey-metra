@@ -1,11 +1,46 @@
 import os
 import collections
 
+from shapely.geometry import LineString, Point
+from geopy.distance import vincenty
+
 from django.core.management.base import BaseCommand as DjangoBaseCommand
 from django.conf import settings
 
 from base.models import Punchcard
 from base import gtfs
+
+
+def _cut(line, point):
+    """Cuts a line in two at a distance from its starting point. Adapted from:
+    http://toblerity.org/shapely/manual.html#linear-referencing-methods
+    """
+    distance = line.project(point)
+    if distance <= 0.0:
+        return [LineString(), LineString(line)]
+    if distance >= line.length:
+        return [LineString(line), LineString()]
+    coords = list(line.coords)
+    for i, p in enumerate(coords):
+        pd = line.project(Point(p))
+        if pd == distance:
+            return [
+                LineString(coords[:i+1]),
+                LineString(coords[i:])]
+        if pd > distance:
+            cp = line.interpolate(distance)
+            return [
+                LineString(coords[:i] + [(cp.x, cp.y)]),
+                LineString([(cp.x, cp.y)] + coords[i:])]
+
+def _distance_to_point_along_path(point, path):
+    result = _cut(path, point)
+    points = list(result[0].coords)
+    distance = 0.0
+    for p1, p2 in zip(points[:-1], points[1:]):
+        distance += vincenty(p1, p2).miles
+    return distance
+
 
 class BaseCommand(DjangoBaseCommand):
 
@@ -19,67 +54,50 @@ class BaseCommand(DjangoBaseCommand):
 
 
     def get_distances_from_chicago(self):
-        # load in the stations along the UP-W line and their corresponding
-        # stop index (which is how the distances are stored)
-        #
-        # NOTE: all outbound trains are odd and metra has configured their GTFS
-        # data to use the index in the stop_sequence to correspond with the same
-        # index in the shapes.txt file for telling the distance from the start
-        # of the route
-        stops = {}
+        """This calculates the distance from chicago for each stop along every
+        route. The paths of each train route and the station locations are
+        grabbed from GTFS data.
+        """
+
+        # collect all of the route path information
+        route_paths = {}
+        with gtfs.CsvReader(self.shapes_txt) as reader:
+            for row in reader:
+                latitude = float(row['shape_pt_lat'])
+                longitude = float(row['shape_pt_lon'])
+                route, io, _ = row['shape_id'].split('_')
+                if io == "OB":
+                    if not route_paths.has_key(route):
+                        route_paths[route] = []
+                    route_paths[route].append((latitude, longitude))
+
+        # convert all the route_path lists to shapely objects
+        for route, point_list in route_paths.iteritems():
+            # NOTE: THIS MAY NEED TO BE MultiLineString's
+            # http://toblerity.org/shapely/manual.html#MultiLineString
+            route_paths[route] = LineString(point_list)
+
+        # get the coordinates of all the stations
+        stop_positions = {}
+        with gtfs.CsvReader(self.stops_txt) as reader:
+            for row in reader:
+                latitude = float(row['stop_lat'])
+                longitude = float(row['stop_lon'])
+                stop_positions[row['stop_id']] = Point(latitude, longitude)
+
+        # calculate the distance from chicago for all of the stops
+        distances_from_chicago = {}
         with gtfs.CsvReader(self.stop_times_txt) as reader:
             for row in reader:
-                route, train_number, _ = gtfs.get_train_info(row['trip_id'])
+                route = gtfs.get_route(row['trip_id'])
                 stop_id = row['stop_id']
-                stop_sequence = int(row['stop_sequence'])
-                if train_number % 2 == 1:
-                    if not stops.has_key(route):
-                        stops[route] = {}
-                    if not stops[route].has_key(stop_id):
-                        stops[route][stop_id] = stop_sequence
-                    elif stops[route][stop_id] != stop_sequence:
-                        pass # see TODO below
-                        # print >> sys.stderr, "SHIT", route, stop_id, stops[route][stop_id], stop_sequence
-                        # raise Exception("oh shit...didn't expect that")
+                if not distances_from_chicago.has_key(route):
+                    distances_from_chicago[route] = {}
+                if not distances_from_chicago[route].has_key(stop_id):
+                    distance = _distance_to_point_along_path(
+                        stop_positions[stop_id],
+                        route_paths[route],
+                    )
+                    distances_from_chicago[route][stop_id] = distance
 
-        # TODO: this is a *big* placeholder for getting this properly set up.
-        # the distances in the GTFS data are not consistent between routes (lots
-        # of 'SHIT' is printed out above). probably want to try using shapely
-        # and/or a request to Metra to make their GTFS feeds publicly available
-        # https://code.google.com/p/googletransitdatafeed/wiki/PublicFeeds#How_to_add_a_feed_to_this_page
-        distances_from_chicago = collections.defaultdict(dict)
-        for route, _stops in stops.iteritems():
-            for stop_id, stop_sequence in _stops.iteritems():
-                distances_from_chicago[route][stop_id] = stop_sequence
         return distances_from_chicago
-
-        #
-        #
-        # NOTE: THe following would work, but the stop_sequence is not
-        # consistent across routes, which gives me doubts that it properly lines
-        # up with the actual data in the shapes.txt file
-        #
-        #
-
-        # # need the reverse mapping below
-        # reverse_stops = {}
-        # for route, _stops in stops.iteritems():
-        #     reverse_stops[route] = {}
-        #     for stop_id, stop_sequence in _stops.iteritems():
-        #         reverse_stops[route][stop_sequence] = stop_id
-        #
-        # # load in the distances for the UP-W line and match them up with the
-        # # stations
-        # distances_from_chicago = collections.defaultdict(dict)
-        # with gtfs.CsvReader(self.shapes_txt) as reader:
-        #     for row in reader:
-        #         route = row['shape_id'].split('_')[0]
-        #         is_outbound = row['shape_id'].split('_')[1] == 'OB'
-        #         if is_outbound:
-        #             stop_sequence = int(row['shape_pt_sequence'])
-        #             stop_id = reverse_stops[route][stop_sequence]
-        #             distance = float(row['shape_dist_traveled'])
-        #             print route, stop_id, distance
-        #             distances_from_chicago[route][stop_id] = distance
-        # print distances_from_chicago
-        # return distances_from_chicago

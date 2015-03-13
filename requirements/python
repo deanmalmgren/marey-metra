@@ -1,6 +1,7 @@
 requests
 flo
 Shapely
+geopy
 
 # Choose your databases adapter
 #psycopg2

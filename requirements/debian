@@ -12,3 +12,4 @@ emacs
 zip
 libmysqlclient-dev
 libgeos-dev
+libgemplugin-ruby

@@ -20,7 +20,7 @@ def marey(request):
     """ Default view for the root """
 
     punchcards = []
-    for punchcard in Punchcard.objects.filter(trip_id="UP-W_UW11_V7"):
+    for punchcard in Punchcard.objects.filter(trip_id="UP-W_UW38_V1"):
         punchcards.append(punchcard.to_json_dict())
 
     return render(request, 'base/marey.html', {

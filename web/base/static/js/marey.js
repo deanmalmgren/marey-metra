@@ -8,40 +8,11 @@
     });
 
     // create the diagram
-    marey_diagram(global_data.punchcards, global_data.distances);
-
-    // // this is the time format for the spreadsheet
-    // var foia_time_format = d3.time.format('%m/%d/%y %H:%M');
-    // var schedule_time_format = d3.time.format(' %H:%M:%S');
-    // var data;
-    // d3.csv("data/morning_train.csv", function (d) {
-    //     var t0 = foia_time_format.parse(d['Arrival Date/Time']);
-    //     var t1 = foia_time_format.parse(d['Departure Date/Time']);
-    //     return {
-    //         // corridor: d['Corridor'],
-    //         // train_number: +d['Train Number'],
-    //         station: d['Station'],
-    //         arrival: t0,
-    //         t: time_of_day(t1),
-    //         departure: t1,
-    //         // dwell: +d['Dwell (sec)'],
-    //         minutes_late: +d['Minutes Late']
-    //     }
-    // }, function (_data) {
-    //     data = _data;
-    //     d3.csv("data/morning_schedule.csv", function (d) {
-    //         return {
-    //             t: time_of_day(schedule_time_format.parse(d[' arrival_time'])),
-    //             station: d[' stop_id']
-    //         }
-    //     }, function (schedule) {
-    //         marey_diagram(data, schedule);
-    //     })
-    // })
+    marey_diagram(global_data.punchcards);
 
 }());
 
-function marey_diagram(punchcards, distances) {
+function marey_diagram(punchcards) {
 
     // aggregate the rows by date
     var nest = d3.nest()
@@ -50,8 +21,9 @@ function marey_diagram(punchcards, distances) {
         .entries(punchcards);
 
     // TODO: There is  probably a more robust way to do this in the situation
-    // where the first element of the next does not actually have all the values
+    // where the first element of the nest does not actually have all the values
     var stations = nest[0].values.map(function (d){return d.stop_id});
+    var distances = nest[0].values.map(function (d){return d.distance_from_chicago});
     function stationLabel(distance, i) {
         return stations[i];
     }
@@ -70,7 +42,7 @@ function marey_diagram(punchcards, distances) {
         }));
 
     var y = d3.scale.linear()
-        .range([0, height])
+        .range([height, 0])
         .domain(d3.extent(distances));
 
     var xAxis = d3.svg.axis()

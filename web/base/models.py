@@ -53,8 +53,8 @@ class Punchcard(models.Model):
 
     def to_json_dict(self):
         return {
-            "trip_id": self.trip_id,
             "stop_id": self.station.stop_id,
             "scheduled_time": self.scheduled_time,
             "tracked_time": self.tracked_time,
+            "distance_from_chicago": self.station.distance_from_chicago,
         }

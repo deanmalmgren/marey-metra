@@ -65,17 +65,18 @@ class BaseCommand(DjangoBaseCommand):
             for row in reader:
                 latitude = float(row['shape_pt_lat'])
                 longitude = float(row['shape_pt_lon'])
-                route, io, _ = row['shape_id'].split('_')
+                route, io, v = row['shape_id'].split('_')
                 if io == "OB":
                     if not route_paths.has_key(route):
-                        route_paths[route] = []
-                    route_paths[route].append((latitude, longitude))
+                        route_paths[route] = {}
+                    if not route_paths[route].has_key(v):
+                        route_paths[route][v] = []
+                    route_paths[route][v].append((latitude, longitude))
 
         # convert all the route_path lists to shapely objects
-        for route, point_list in route_paths.iteritems():
-            # NOTE: THIS MAY NEED TO BE MultiLineString's
-            # http://toblerity.org/shapely/manual.html#MultiLineString
-            route_paths[route] = LineString(point_list)
+        for route in route_paths:
+            for v, point_list in route_paths[route].iteritems():
+                route_paths[route][v] = LineString(point_list)
 
         # get the coordinates of all the stations
         stop_positions = {}
@@ -94,10 +95,17 @@ class BaseCommand(DjangoBaseCommand):
                 if not distances_from_chicago.has_key(route):
                     distances_from_chicago[route] = {}
                 if not distances_from_chicago[route].has_key(stop_id):
-                    distance = _distance_to_point_along_path(
-                        stop_positions[stop_id],
-                        route_paths[route],
-                    )
-                    distances_from_chicago[route][stop_id] = distance
+                    is_intersecting = False
+                    for v, path in route_paths[route].iteritems():
+                        if stop_positions[stop_id].intersects(path):
+                            distance = _distance_to_point_along_path(
+                                stop_positions[stop_id],
+                                path,
+                            )
+                            distances_from_chicago[route][stop_id] = distance
+                            is_intersecting = True
+                            break
+                    if not is_intersecting:
+                        raise ValueError("crap. station isn't on any paths")
 
         return distances_from_chicago

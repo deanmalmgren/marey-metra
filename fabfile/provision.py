@@ -136,18 +136,18 @@ def setup_django():
     """
     fabtools.files.upload_template(
         "django_local_settings.py",
-        "%s/web/conf/settings/local.py" % env.remote_path,
+        os.path.join(env.web_path, "/conf/settings/local.py"),
         context=env,
         use_jinja=True,
         template_dir=utils.fabfile_templates_root(),
     )
 
-    # # only collectstatic on non-dev environments- in dev, the dev
-    # # server handles staticfiles and having things in $root/static
-    # # confuses compressor
-    # if env.config_type != 'dev':
-    #     with cd(env.remote_path):
-    #         run("./manage.py collectstatic --noinput")
+    # only collectstatic on non-dev environments- in dev, the dev
+    # server handles staticfiles and having things in $root/static
+    # confuses compressor
+    if env.config_type != 'dev':
+        with cd(env.remote_path):
+            run("./manage.py collectstatic --noinput")
 
 
 @task
@@ -171,7 +171,7 @@ def configure_apache():
         env.site_name,
         template_source=template,
         site_name=env.site_name,
-        site_root=os.path.join(env.remote_path, 'www'),
+        site_root=os.path.join(env.web_path),
     )
     fabtools.require.apache.disabled('000-default')
 

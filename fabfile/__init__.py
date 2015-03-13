@@ -18,12 +18,14 @@ env.django_db = 'marey'
 env.repository_path = 'git@github.com:deanmalmgren/marey-metra.git'
 env.ssh_directory = os.path.expanduser(os.path.join('~', '.ssh'))
 env.site_name = 'marey-metra.datasco.pe'
+web_directory = "web"
 
 @task
 def dev():
     """define development server"""
     env.provider = "virtualbox"
     env.remote_path = '/vagrant'
+    env.web_path = os.path.join(env.remote_path, web_directory)
     env.config_type = 'development'
     env.use_repository = False
     env.site_name = None
@@ -35,6 +37,7 @@ def dev():
 def prod():
     env.provider = "digitalocean"
     env.remote_path = '/srv/www/marey-metra'
+    env.web_path = os.path.join(env.remote_path, web_directory)
     env.config_type = 'production'
     env.branch = 'master'
     env.use_repository = True

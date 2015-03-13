@@ -6,7 +6,7 @@ import collections
 from django.conf import settings
 
 from ..gtfs_commands import BaseCommand
-from base.models import Punchcard
+from base.models import Punchcard, Station, Route
 from base import gtfs
 
 class Command(BaseCommand):
@@ -72,10 +72,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-        distances_from_chicago = self.get_distances_from_chicago()
+        # this is only loading UP-W data at the moment
 
         # go through the FOIA data and load the UP-W data into the database
         with gtfs.CsvReader(self.foia_csv) as reader:
+            route = Route.objects.get(pk="UP-W")
             for row in reader:
                 if row['Corridor'] == 'UP West' and row['Train Number'].isdigit():
                     trip_id = "UP-W_UW%s_%s" % (
@@ -92,15 +93,11 @@ class Command(BaseCommand):
                     scheduled_time = scheduled_time.replace(
                         tracked_time.year, tracked_time.month, tracked_time.day,
                     )
-                    distance_traveled = distances_from_chicago[stop_id]
-                    if int(row['Train Number']) % 2 == 0:
-                        distance_traveled =  distances_from_chicago['ELBURN'] - distances_from_chicago[stop_id]
 
-
+                    station = Station.objects.get(stop_id=stop_id, route=route)
                     punchcard, created = Punchcard.objects.get_or_create(
                         trip_id=trip_id,
-                        stop_id=stop_id,
-                        tracked_time=tracked_time,
+                        station=station,
                         scheduled_time=scheduled_time,
-                        distance_traveled=distance_traveled,
+                        tracked_time=tracked_time,
                     )
